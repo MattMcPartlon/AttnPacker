@@ -1,0 +1,64 @@
+#config path
+/home/mmcpartlon/ProteinLearning/protein_learning/models/design/run_args/global_config_bc.txt
+
+
+### New Options ###
+--nsr_hidden_layers 1
+--smoothing 0.1
+
+######### Model Options #########
+--scalar_dim_hidden 120
+--pair_dim_hidden 120
+--coord_dim_hidden 16
+--evoformer_scalar_heads_n_dim 10 16
+--evoformer_pair_heads_n_dim 4 28
+--tfn_heads 10
+--tfn_head_dims 16 4
+--evoformer_depth 8
+--tfn_depth 6
+#--use_dist_sim
+#--append_rel_dist
+--use_coord_layernorm
+#--append_sc_coord_norms_nsr
+--max_nbr_radius 16
+--max_nbrs 16
+--pre_norm_pair
+#--no_predict_structure
+#--no_use_evoformer
+######### Loss Options #########
+--pair_wt 0.15
+--sc_rmsd_wt 0.15
+--nsr_wt 1
+--pair_loss_atom_tys CB CB CA CG CA CG1 CA CG2 CA OG1
+
+
+######### Feature Options #########
+--use_dist
+--use_tr_ori
+--use_bb_dihedral
+
+######### Mask Options #########
+
+--max_mask_frac 0.75
+--min_mask_frac 0
+
+# Spatial
+--spatial_mask_weight 0.66
+--spatial_mask_top_k 100
+--spatial_mask_max_radius 16
+
+# Contiguous
+--contiguous_mask_weight 0.66
+--contiguous_mask_min_len 1
+--contiguous_mask_max_len 300
+
+# Random
+--random_mask_weight 0.66
+--random_mask_min_p 0
+--random_mask_max_p 1
+
+# No Mask
+--no_mask_weight 0
+
+# Full Mask
+--full_mask_weight 1

@@ -1,0 +1,63 @@
+--name design
+--out_root /mnt/local/mmcpartlon/design/models
+#--checkpoint_idx
+#--load_state
+#--config_path
+#--raise_exceptions
+########################
+# train/validate/test info
+########################
+--train_root /mnt/data/RaptorXCommon/TrainTestData/BCData/
+--train_list /mnt/data/RaptorXCommon/TrainTestData/BCData/Jan2020/LISTS/BC40.trainA.list
+--train_seq_folder /mnt/data/RaptorXCommon/TrainTestData/BCData/Jan2020/SEQ
+--train_native_folder /mnt/data/RaptorXCommon/TrainTestData/BCData/Jan2020/Chains
+--val_root /mnt/data/RaptorXCommon/TrainTestData/BCData/
+--val_list /mnt/data/RaptorXCommon/TrainTestData/BCData/Jan2020/LISTS/BC40.validA.list
+--val_seq_folder /mnt/data/RaptorXCommon/TrainTestData/BCData/Jan2020/SEQ
+--val_native_folder /mnt/data/RaptorXCommon/TrainTestData/BCData/Jan2020/Chains
+#--test_root
+#--test_list
+#--test_seq_folder
+#--test_native_folder
+
+########################
+# Training/data loading settings
+########################
+--data_workers 3
+#--no_shuffle
+--gpu_indices 2
+--checkpoint_every 2000
+--save_every 100
+--validate_every 250
+--test_every 250
+--max_val_samples 250
+--max_test_samples 250
+--max_len 300
+--epochs 1000
+--batch_size 32
+#--decrease_lr_by 0.5
+#--decrease_lr_every 2
+--lr 0.001
+#--weight_decay 0.01
+--grad_norm_clip 1
+#--no_clip_grad_per_sample
+#--no_use_re_zero
+#--tm_cutoff 0
+#--rmsd_cutoff -1
+
+########################
+# Loss settings
+########################
+#--coord_loss_tys
+#--atom_loss_tys
+#--pair_loss_tys
+#--coord_loss_weights
+#--pair_loss_weights
+#--atom_loss_weights
+
+########################
+# model configs
+########################
+#--se3_configs
+#--evoformer_configs
+#--ipa_configs

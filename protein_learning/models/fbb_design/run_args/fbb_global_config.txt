@@ -1,0 +1,52 @@
+--name fbb_design_21_12_2022_16:07:51
+--out_root /mnt/local/mmcpartlon/fbb_design/models
+#--checkpoint_idx
+--load_state
+#--config_path
+#--raise_exceptions
+########################
+# train/validate/test info
+
+#--train_decoy_folder /mnt/local/mmcpartlon/TrainTestData/DIPS/bound
+#--train_list /mnt/local/mmcpartlon/TrainTestData/DIPS/LISTS/dips_n_bc.list
+#--train_seq_folder /mnt/data/RaptorXCommon/TrainTestData/BCData/Jan2020/SEQ
+#--train_native_folder /mnt/local/mmcpartlon/TrainTestData/DIPS/bound
+
+--val_decoy_folder /mnt/data/RaptorXCommon/TrainTestData/BCData/Jan2020/Chains
+--val_list /mnt/data/RaptorXCommon/TrainTestData/BCData/Jan2020/LISTS/BC40.validA.list
+#--val_seq_folder /mnt/data/RaptorXCommon/TrainTestData/BCData/Jan2020/SEQ
+--val_native_folder /mnt/data/RaptorXCommon/TrainTestData/BCData/Jan2020/Chains
+
+--train_decoy_folder /mnt/data/RaptorXCommon/TrainTestData/BCData/Jan2020/Chains
+--train_list /mnt/data/RaptorXCommon/TrainTestData/BCData/Jan2020/LISTS/BC40.trainA.list
+--train_native_folder /mnt/data/RaptorXCommon/TrainTestData/BCData/Jan2020/Chains
+
+
+########################
+# Training/data loading settings
+########################
+--data_workers 4
+#--no_shuffle
+--gpu_indices 2
+--checkpoint_every 1000
+--save_every 100
+--validate_every 500
+--test_every 1000
+--max_val_samples 150
+--max_test_samples 250
+--max_len 400
+--epochs 1000
+--batch_size 16
+#--decrease_lr_by 0.5
+#--decrease_lr_every 2
+--lr 0.001
+#--weight_decay 0.01
+--grad_norm_clip 1
+--example_clip 1
+#--no_average_batch
+#--no_clip_grad_per_sample
+#--no_use_re_zero
+#--tm_cutoff 0
+#--rmsd_cutoff -1
+
+

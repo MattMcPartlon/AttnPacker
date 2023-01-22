@@ -1,0 +1,14 @@
+#config path
+/home/mmcpartlon/ProteinLearning/protein_learning/models/sc_packing/run_args/global_config.txt
+--scalar_dim_hidden 128
+--pair_dim_hidden 128
+--coord_dim_hidden 16
+--evoformer_scalar_heads_n_dim 10 16
+--evoformer_pair_heads_n_dim 4 32
+--tfn_heads 10
+--tfn_head_dims 16 4
+--evoformer_depth 8
+--tfn_depth 6
+#--use_dist_sim
+--append_rel_dist
+--use_coord_layernorm

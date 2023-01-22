@@ -1,0 +1,52 @@
+--name masked_design_16_06_2022_19:29:08
+--out_root /mnt/local/mmcpartlon/masked_design/models
+#--checkpoint_idx
+--load_state
+#--config_path
+#--raise_exceptions
+########################
+# train/validate/test info
+########################
+#--train_root /mnt/data/RaptorXCommon/TrainTestData/BCData/Jan2020/Chains
+#--train_list /mnt/data/RaptorXCommon/TrainTestData/BCData/Jan2020/LISTS/BC40.trainA.list
+#--train_seq_folder /mnt/data/RaptorXCommon/TrainTestData/BCData/Jan2020/SEQ
+#--train_native_folder /mnt/data/RaptorXCommon/TrainTestData/BCData/Jan2020/Chains
+--train_decoy_folder /mnt/local/mmcpartlon/TrainTestData/Dimers/glinter_decoy
+--train_list /mnt/local/mmcpartlon/TrainTestData/Dimers/LISTS/glinter_n_bc.list
+#--train_seq_folder /mnt/data/RaptorXCommon/TrainTestData/BCData/Jan2020/SEQ
+--train_native_folder /mnt/local/mmcpartlon/TrainTestData/Dimers/glinter_native
+--val_decoy_folder /mnt/data/RaptorXCommon/TrainTestData/BCData/Jan2020/Chains
+--val_list /mnt/data/RaptorXCommon/TrainTestData/BCData/Jan2020/LISTS/BC40.validA.list
+--val_seq_folder /mnt/data/RaptorXCommon/TrainTestData/BCData/Jan2020/SEQ
+--val_native_folder /mnt/data/RaptorXCommon/TrainTestData/BCData/Jan2020/Chains
+--test_decoy_folder /mnt/local/mmcpartlon/TrainTestData/test_data/CASP/casp_13_14
+--test_list /mnt/local/mmcpartlon/TrainTestData/test_data/LISTS/casp_13_14.list
+#--test_seq_folder /mnt/local/mmcpartlon/TrainTestData/test_data/CASP/SEQ
+--test_native_folder /mnt/local/mmcpartlon/TrainTestData/test_data/CASP/casp_13_14
+
+########################
+# Training/data loading settings
+########################
+--data_workers 4
+#--no_shuffle
+--gpu_indices 2
+--checkpoint_every 2000
+--save_every 100
+--validate_every 1000
+--test_every 1000
+--max_val_samples 250
+--max_test_samples 250
+--max_len 380
+--epochs 1000
+--batch_size 20
+#--decrease_lr_by 0.5
+#--decrease_lr_every 2
+--lr 0.001
+#--weight_decay 0.01
+--grad_norm_clip 1
+#--no_clip_grad_per_sample
+#--no_use_re_zero
+#--tm_cutoff 0
+#--rmsd_cutoff -1
+
+

@@ -1,0 +1,78 @@
+--gpu_idx 0
+--n_cycles 1
+
+######### Dataset Loading #########
+
+
+######### Rosetta #########
+--stats_root /mnt/local/mmcpartlon/design/eval/rosetta_ssm2
+--data_root /mnt/local/mmcpartlon/TrainTestData/test_data/rosetta_ssm2_mutation_pdbs
+#--data_list /mnt/local/mmcpartlon/TrainTestData/test_data/rosetta_ssm2_mutation_pdbs/rosetta_ssm.list
+--data_list /mnt/local/mmcpartlon/TrainTestData/test_data/LISTS/rosetta_ssm.list
+--native_folder /mnt/local/mmcpartlon/TrainTestData/test_data/rosetta_ssm2_mutation_pdbs
+#--seq_folder /mnt/local/mmcpartlon/TrainTestData/test_data/CASP/SEQ
+#--mask_dict /mnt/local/mmcpartlon/TrainTestData/test_data/rosetta_ssm2_mutation_pdbs/mutation_dict.npy
+
+######### DEEPDDG #########
+#--stats_root /mnt/local/mmcpartlon/design/eval/deep_ddg_single_point
+#--data_root /mnt/local/mmcpartlon/TrainTestData/test_data/deep_ddg_test_pdbs
+#--data_list /mnt/local/mmcpartlon/TrainTestData/test_data/LISTS/deep_ddg_test_list.list
+#--native_folder /mnt/local/mmcpartlon/TrainTestData/test_data/deep_ddg_test_pdbs
+#--data_root /mnt/local/mmcpartlon/TrainTestData/test_data/deep_ddg_test_pdbs_for_sp_mutations
+#--data_list /mnt/local/mmcpartlon/TrainTestData/test_data/deep_ddg_test_pdbs_for_sp_mutations/deep_ddg_test_sp_mutation_list.list
+#--native_folder /mnt/local/mmcpartlon/TrainTestData/test_data/deep_ddg_test_pdbs_for_sp_mutations
+
+#--seq_folder /mnt/local/mmcpartlon/TrainTestData/test_data/CASP/SEQ
+#--mask_dict /mnt/local/mmcpartlon/TrainTestData/test_data/deep_ddg_test_pdbs_for_sp_mutations/mutation_dict.npy
+
+
+######### CASP #########
+#--stats_root /mnt/local/mmcpartlon/design/eval/casp_13_14_full_autoreg
+#--data_root /mnt/local/mmcpartlon/TrainTestData/test_data
+#--data_list /mnt/local/mmcpartlon/TrainTestData/test_data/LISTS/casp_13_14.list
+#--native_folder /mnt/local/mmcpartlon/TrainTestData/test_data/CASP/casp_13_14
+#--seq_folder /mnt/local/mmcpartlon/TrainTestData/test_data/CASP/SEQ
+
+
+######### TS50 #########
+#--stats_root /mnt/local/mmcpartlon/design/eval/ts50_full_mar_3
+#--data_root /mnt/local/mmcpartlon/TrainTestData/test_data/TS50/ts50_chains
+#--data_list /mnt/local/mmcpartlon/TrainTestData/test_data/LISTS/ts50.list
+#--native_folder /mnt/local/mmcpartlon/TrainTestData/test_data/TS50/ts50_chains
+
+######### CATH #########
+#--stats_root /mnt/local/mmcpartlon/design/eval/cath42_full_mar_3
+#--data_root /mnt/local/mmcpartlon/TrainTestData/test_data/CATH/cath42_chains
+#--data_list /mnt/local/mmcpartlon/TrainTestData/test_data/LISTS/cath42.list
+#--native_folder /mnt/local/mmcpartlon/TrainTestData/test_data/CATH/cath42_chains
+
+--max_samples -1
+#--autoregressive
+#--decode_frac 0.1
+
+######### Model Loading #########
+--config_root /mnt/local/mmcpartlon/design/models/params
+--model_config_paths design_04_03_2022_10:17:10
+--model_names rx11_unconditioned
+######### Mask Options #########
+
+# Spatial
+--spatial_mask_weight 0
+--spatial_mask_top_k 30
+--spatial_mask_max_radius 12
+
+# Contiguous
+--contiguous_mask_weight 0
+--contiguous_mask_min_len 5
+--contiguous_mask_max_len 60
+
+# Random
+--random_mask_weight 0
+--random_mask_min_p 0.5
+--random_mask_max_p 0.5
+
+# No Mask
+--no_mask_weight 0
+
+# Full Mask
+--full_mask_weight 1

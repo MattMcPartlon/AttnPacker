@@ -1,0 +1,83 @@
+--raise_exceptions
+--model_config_path /mnt/local/mmcpartlon/masked_design/models/params/masked_design_16_06_2022_19:29:08_masked_design.npy
+--global_config_path /mnt/local/mmcpartlon/masked_design/models/params/masked_design_16_06_2022_19:29:08.npy
+--stats_dir /mnt/local/mmcpartlon/design_with_plv2/masked_design/db5_test/stats/test1
+--pdb_dir /mnt/local/mmcpartlon/design_with_plv2/masked_design/db5_test/pdbs/test1
+--gpu_indices 2
+--eval_decoy_folder /mnt/local/mmcpartlon/TrainTestData/DIPS/db5/raw
+--eval_native_folder /mnt/local/mmcpartlon/TrainTestData/DIPS/db5/raw
+--eval_target_list /mnt/local/mmcpartlon/TrainTestData/DIPS/db5/raw/pairs-postprocessed-test.txt
+#--eval_seq_folder
+--max_samples 55
+--n_replicas 1
+#--model_path
+--use_cycles 1
+#--train_on_bounded_complex
+--min_len_cutoff 50
+--max_len 500
+
+######## FLAG ARGS ############
+--include_contact_prob 1
+--include_interface_prob 1
+--contact_fracs 0.05 0.05
+--interface_fracs 0.1 0.1
+--include_both_interface_prob 1
+
+######## ESM ARGS ############
+--use_esm_prob 1
+--use_esm_both_chain_prob 1
+--esm_gpu_idx 0
+
+############### stats args ################
+--get_nsr_stats
+--get_lddt_stats
+--get_violation_stats
+--get_rmsd_stats
+--get_contact_stats
+#--get_mae_stats
+#--get_distance_stats
+
+############### feature generation args ################
+--mask_feats
+--mask_seq
+--mask_feat_n_seq_indep_prob 0
+
+######### INTRA-CHAIN MASKING OPTIONS #########
+--inverse_interface_mask_weight 0
+--interface_mask_weight 0
+--inverse_interface_full_mask_weight 0
+--interface_full_mask_weight 0
+--spatial_mask_weight 0
+--contiguous_mask_weight 0
+--random_mask_weight 0
+--no_mask_weight 0
+--full_mask_weight 0
+--true_interface_mask_weight 1
+--spatial_mask_top_k 100
+--spatial_mask_max_radius 16
+--contiguous_mask_min_len 5
+--contiguous_mask_max_len 50
+--random_mask_min_p 0.0
+--random_mask_max_p 1
+--max_mask_frac 0.4
+--min_mask_frac 0.0
+--interface_mask_min_frac 0.1
+--interface_mask_max_frac 0.6
+--inverse_interface_mask_min_frac 0.1
+--inverse_interface_mask_max_frac 0.6
+
+######### INTER-CHAIN MASKING OPTIONS #########
+--inter_random_mask_weight 0
+--inter_one_to_all_mask_weight 0
+--inter_full_mask_weight 1
+--inter_no_mask_weight 0
+
+######### CHAIN PARTITION OPTIONS #########
+--partition_chains
+--linear_partition_weight 1
+--bilinear_partition_weight 1
+--identity_partition_weight 0
+--linear_n_classes 2 2
+--partition_min_frac 0
+--partition_min_len 15
+--bilinear_max_len 50

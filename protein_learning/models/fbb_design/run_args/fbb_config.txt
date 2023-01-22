@@ -1,0 +1,147 @@
+#GLOBAL CONFIG PATH
+/home/mmcpartlon/ProteinLearningV2/protein_learning/models/fbb_design/run_args/fbb_global_config.txt
+#--force_override
+#--global_config_override_path /mnt/local/mmcpartlon/fbb_design_ft/models/params/fbb_design_21_12_2022_16:00:06.npy
+
+############### SE(3)-Transformer ###############
+--no_predict_from_angles
+--use_tfn
+--fiber_in 256 3
+--fiber_out 256 37
+--fiber_hidden 200 16
+--se3_heads 12 12
+--se3_dim_heads 16 4
+--se3_edge_dim 128
+--append_norm
+--append_rel_dist
+#--append_edge_attn
+--learn_head_weights
+
+--se3_depth 6
+
+--node_dim_hidden 256
+--pair_dim_hidden 128
+--coord_noise 0.0
+
+
+--predict_sc_atoms
+--depth 6 4
+--node_dropout 0.1 0.1
+--pair_dropout 0.2 0
+--do_tri_mul 1 0
+--do_tri_attn 1 0
+--do_pair_outer 1 0
+
+
+######## GT-MODEL ARGS ##########
+--use_ipa 0 1
+--share_weights 0 1
+
+######## NODE UPDATE ARGS ##########
+--use_dist_attn 1 1
+--node_heads 8 10
+--node_dim_query 32 16
+--node_dim_value 32 16
+--node_dim_query_point 4 4
+--node_dim_value_point 8 8
+
+
+######## PAIR UPDATE ARGS ##########
+--pair_heads 4 4
+--pair_dim_head 32 32
+
+
+######### MASKED FEATURE GENERATOR #########
+#--mask_feats
+--mask_seq
+--mask_feat_n_seq_indep_prob 0
+
+######### INTRA-CHAIN MASKING OPTIONS #########
+--spatial_mask_weight 1
+--contiguous_mask_weight 1
+--random_mask_weight 1
+--no_mask_weight 4
+--full_mask_weight 1
+--spatial_mask_top_k 100
+--spatial_mask_max_radius 20
+--contiguous_mask_min_len 5
+--contiguous_mask_max_len 100
+--random_mask_min_p 0.0
+--random_mask_max_p 1
+--max_mask_frac 1
+--min_mask_frac 0
+
+######### INTER-CHAIN MASKING OPTIONS #########
+--inter_random_mask_weight 0
+--inter_one_to_all_mask_weight 0
+--inter_full_mask_weight 0
+--inter_no_mask_weight 1
+
+######### LOSS OPTIONS #########
+--torsion_loss_weight 0.5
+#--fape_wt 0
+--nsr_wt 0.25
+--tm_wt 0
+--pair_dist_wt 0.1
+--sc_rmsd_wt 1.25
+--sc_rmsd_p 1
+--tm_atom_tys CA
+--plddt_wt 0.25
+--plddt_bins 25
+--pair_dist_atom_tys CA CB CA CG CA OG CA OG1 CA CG1 CA SG CA CG2
+--pair_dist_step 0.25
+--pair_dist_max_dist 16
+--plddt_atom_tys distal
+
+
+######### FEATURE OPTIONS #########
+--joint_embed_res_pair_rel_sep
+--joint_embed_res_pair_rel_sep_embed_dim 60
+
+# REL-POS
+--one_hot_res_rel_pos
+--res_rel_pos_encode_dim 10
+
+# RES TY
+--one_hot_res_ty
+--res_ty_corrupt_prob 0.05
+
+#TR-Ori
+--one_hot_tr_rosetta_ori
+--tr_rosetta_ori_encode_dim 24
+
+# BB-Dihedral
+--one_hot_bb_dihedral
+--bb_dihedral_encode_dim 24
+
+# Centrality
+--rbf_encode_centrality
+--centrality_encode_dim 6
+
+# REL-DIST
+#--one_hot_rel_dist
+--rbf_encode_rel_distance
+--rel_dist_encode_dim 18
+--rel_dist_bounds 2 16
+--rel_dist_atom_tys CA CA CA N CA C CA CB
+
+
+--one_hot_rel_chain
+
+#SEC STRUCT
+#--embed_sec_struct
+#--sec_struct_embed_dim 8
+
+#--quat_encode_rel_ori
+#--encode_local_rel_coords
+#
+#--embed_res_rel_pos
+#--embed_res_ty
+#--embed_bb_dihedral
+#--embed_rel_sep
+#--one_hot_rel_sep
+#--embed_centrality
+#--embed_rel_dist
+#--embed_tr_rosetta_ori
+
+
