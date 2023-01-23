@@ -1,6 +1,8 @@
 # AttnPacker 
 
-TODO:
+Pre-trained models, and PDB files used to generate all results is available at  https://zenodo.org/record/7559358#.Y83tYuzMI0Q
+
+TODO: Examples and Inference
 
 This repo contains code for AttnPacker
 
