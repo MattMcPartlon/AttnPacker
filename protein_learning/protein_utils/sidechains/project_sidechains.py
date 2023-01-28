@@ -49,6 +49,65 @@ def masked_mean(
     mean = tensor.sum(dim=dim, keepdim=keepdim) / total_el.clamp(min=1.)
     return mean.masked_fill(total_el == 0, 0.)
 
+@typechecked
+def align_starting_coords(
+    coords: TensorType["batch","res","atom",3], 
+    sequence: TensorType["batch","res", torch.long], 
+    atom_mask: TensorType["batch","res","atom",torch.bool], 
+)->TensorType["batch","res","atom",3]:
+    """Align coordinates before dihedral projection
+    
+    This is done to avoid "mirrored" looking conformations
+    for residues such as valine or leucine when the terminal O and OH are flipped.
+    """
+    coord_module = FACoordModule(
+        use_persistent_buffers=True,
+        predict_angles=False,
+        replace_bb = True,
+    )
+    N, CA, C, *_ = coords.unbind(dim=-2)
+    rigids = Rigid.make_transform_from_reference(N, CA, C).detach()
+
+    #consider initial conformations
+    ptn = dict(aatype=sequence, all_atom_positions=coords, all_atom_mask=atom_mask)
+    torsion_info = atom37_to_torsion_angles(ptn)
+    angles = safe_normalize(torsion_info["torsion_angles_sin_cos"].detach())
+
+    # for residues like LEU and VAL, the terminal groups can be flipped
+    swapped_coords = swap_symmetric_atoms(coords.clone(),sequence)
+    swapped_ptn = dict(aatype=sequence, all_atom_positions=swapped_coords, all_atom_mask=atom_mask)
+    swapped_torsion_info = atom37_to_torsion_angles(swapped_ptn)
+    swapped_angles = safe_normalize(swapped_torsion_info["torsion_angles_sin_cos"].detach())
+
+    #map from dihedrals to coordinates
+    to_coords = lambda x: coord_module.forward(
+        seq_encoding=sequence,
+        residue_feats=None,
+        coords= coords,
+        rigids=rigids,
+        angles=x,
+    )["positions"]
+
+    #per-res rmsd between x and y
+    prms = lambda x,y : compute_sc_rmsd(
+        coords=x,
+        target_coords=y,
+        atom_mask=atom_mask,
+        per_residue=True,
+        sequence=sequence,
+    )
+
+    #take coordinates of lower rmsd conformations
+    coords_proj = to_coords(angles)
+    swapped_coords_proj = to_coords(swapped_angles)
+
+    prms_initial = prms(coords_proj,coords)
+    prms_mirrored = prms(swapped_coords_proj,swapped_coords)
+    swapped_better = prms_initial > prms_mirrored
+    coords[swapped_better] = swapped_coords[swapped_better]
+    return coords
+
+
 def compute_sc_rmsd(
     coords: TensorType["batch","res", "atom", 3],
     target_coords: TensorType["batch","res", "atom", 3],
@@ -337,7 +396,6 @@ def compute_clashes(atom_coords: Tensor, atom_mask: Tensor, sequence:Tensor, **k
             energy = torch.sum(unreduced_loss)
         )
     )
-    
 
 class RotamerProjection(nn.Module):  # noqa
     """convert side chain dihedral angles to coordinates"""
@@ -347,7 +405,7 @@ class RotamerProjection(nn.Module):  # noqa
         atom_coords: TensorType["batch","res","atom",3], 
         sequence: TensorType["batch","res", torch.long], 
         atom_mask: TensorType["batch","res","atom",torch.bool], 
-        use_input_backbone: bool = False
+        use_input_backbone: bool = True,
         )-> None:
         """
         Parameters:
@@ -358,6 +416,10 @@ class RotamerProjection(nn.Module):  # noqa
             impute backbone atom coordinates by iotimizing bb-hihedral angles.
         """
         super(RotamerProjection, self).__init__()
+        atom_coords = align_starting_coords(atom_coords.clone(),sequence,atom_mask)
+        self.sequence = sequence
+        self.atom_coords = atom_coords.detach()
+        self.atom_mask = atom_mask
         # rigid frame defined by (fixed) backbone atoms
         N, CA, C, *_ = atom_coords.unbind(dim=-2)
         self.bb_rigids = Rigid.make_transform_from_reference(N, CA, C).detach()
@@ -365,7 +427,7 @@ class RotamerProjection(nn.Module):  # noqa
         self.coord_module = FACoordModule(
             use_persistent_buffers=True,
             predict_angles=False,
-            replace_bb = use_input_backbone
+            replace_bb = True,
         )
         # Set initial dihedrals to those computed from initial s.c. atoms
         ptn = dict(aatype=sequence, all_atom_positions=atom_coords, all_atom_mask=atom_mask)
@@ -376,10 +438,7 @@ class RotamerProjection(nn.Module):  # noqa
         
         # angle parameter to optimize over
         self.dihedrals = nn.Parameter(self.initial_angles.clone(), requires_grad=True)
-        self.sequence = sequence
-        self.atom_coords = atom_coords.detach()
         self._dihedral_loss = SideChainDihedralLoss()
-
     
     def dihedral_deviation_loss(self):
         norm_angles = safe_normalize(self.dihedrals)
@@ -695,8 +754,3 @@ def iterative_project_onto_rotamers(
         prev_atom_coords[atom_ty_mask] = override_alpha*x0 + (1-override_alpha)*xt
     return prev_atom_coords, dihedrals
     
-
-
-
-
-
