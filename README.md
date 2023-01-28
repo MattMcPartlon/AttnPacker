@@ -10,7 +10,7 @@ This repo contains code for AttnPacker
 
 ## Run Post-Process Procedure on a PDB File
 ```
-usage: project_rotamer_example.py [-h] [--pdb_path_out PDB_PATH_OUT] [--steric_wt STERIC_WT] [--steric_tol_allowance STERIC_TOL_ALLOWANCE]
+usage: post_process.py [-h] [--pdb_path_out PDB_PATH_OUT] [--steric_wt STERIC_WT] [--steric_tol_allowance STERIC_TOL_ALLOWANCE]
                                   [--steric_tol_frac STERIC_TOL_FRAC] [--steric_hbond_allowance STERIC_HBOND_ALLOWANCE]
                                   [--max_optim_iters MAX_OPTIM_ITERS] [--torsion_loss_wt TORSION_LOSS_WT] [--device DEVICE]
                                   pdb_path_in
@@ -39,7 +39,7 @@ optional arguments:
   --device DEVICE       device to use when running this procedure (default: cpu)
 
 
-(py38)[mmcpartlon@raptorx11 AttnPacker]$ python protein_learning/examples/project_rotamer_example.py ./protein_learning/examples/pdbs/T1057-predicted.pdb --steric_tol_allowance 0 --steric_tol_frac 0.95 --max_optim_iters 200 --device cuda:0
+(py38)[mmcpartlon@raptorx11 AttnPacker]$ python protein_learning/examples/post_process.py ./protein_learning/examples/pdbs/T1057-predicted.pdb --steric_tol_allowance 0 --steric_tol_frac 0.95 --max_optim_iters 200 --device cuda:0
 
 [fn: project_onto_rotamers] : Using device cuda:0
 [INFO] Beginning rotamer projection
