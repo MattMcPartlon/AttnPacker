@@ -5,7 +5,7 @@ from protein_learning.protein_utils.sidechains.project_sidechains import (
 from protein_learning.common.data.data_types.protein import Protein
 import torch
 import protein_learning.common.protein_constants as pc
-from protein_learning.common.helpers import safe_normalize, default
+from protein_learning.common.helpers import safe_normalize, default, masked_mean
 from protein_learning.common.data.datasets.utils import set_canonical_coords_n_masks
 from torchtyping import TensorType, patch_typeguard
 from typeguard import typechecked
@@ -245,4 +245,27 @@ def assess_sidechains(
         lambda x: x.detach().cpu().squeeze(0) if torch.is_tensor(x) else x
     )
 
-
+def summarize(assess_stats):
+    angle_diffs = torch.abs(assess_stats["dihedral"]["mae"]*(180/PI))
+    mean_mae = masked_mean(torch.abs(angle_diffs),assess_stats["dihedral"]["mask"],dim=0)
+    has_chi_mask = torch.any(assess_stats["dihedral"]["mask"],dim=-1)
+    all_lt_20 = torch.sum(angle_diffs < 20, dim=-1) == 4
+    mae_sr = torch.sum(all_lt_20[has_chi_mask])/torch.sum(has_chi_mask.float())
+    mean_per_res_rmsd = torch.mean(assess_stats["rmsd"]["per-res"][has_chi_mask])
+    dihedral_counts = torch.sum(assess_stats["dihedral"]["mask"],dim=0)
+    steric_ks = "num_clashes num_atom_pairs energy".split()
+    return dict(
+        mean_mae = mean_mae,
+        mae_sr = mae_sr,
+        rmsd = mean_per_res_rmsd,
+        dihedral_counts=dihedral_counts,
+        clash_info = {
+            tol:{
+                k: assess_stats['clash-info'][tol]["steric"][k] for k in steric_ks
+                } 
+            for tol in assess_stats['clash-info']
+        },
+        seq_len = len(has_chi_mask),
+        num_sc = torch.sum(has_chi_mask).item(),
+        ca_rmsd = assess_stats["ca_rmsd"]
+    )

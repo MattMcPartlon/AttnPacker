@@ -1,6 +1,6 @@
 # AttnPacker 
 
-Pre-trained models, and PDB files used to generate all results is available at  https://zenodo.org/record/7559358#.Y83tYuzMI0Q
+Pre-trained models, and PDB files used to generate all results are available at  https://zenodo.org/record/7559358#.Y83tYuzMI0Q
 
 TODO: Examples and Inference
 
@@ -38,7 +38,6 @@ optional arguments:
                         penalize average deviaiton from initial dihedral angles with this weight (default: 0)
   --device DEVICE       device to use when running this procedure (default: cpu)
 
-
 (py38)[mmcpartlon@raptorx11 AttnPacker]$ python protein_learning/examples/post_process.py ./protein_learning/examples/pdbs/T1057-predicted.pdb --steric_tol_allowance 0 --steric_tol_frac 0.95 --max_optim_iters 200 --device cuda:0
 
 [fn: project_onto_rotamers] : Using device cuda:0
@@ -58,6 +57,40 @@ Saving to: ./protein_learning/examples/pdbs/post-processed-T1057-predicted.pdb
 Finished in 3.32 seconds
 ```
 
+## Compare Side-Chain prediction with native structure
+
+```python
+from protein_learning.assessment.sidechain import assess_sidechains, summarize
+import pprint
+predicted_pdb = "./pdbs/post-processed-T1080-predicted.pdb"
+target_pdb = "./pdbs/T1080.pdb"
+res_level_stats = assess_sidechains(target_pdb, predicted_pdb, steric_tol_fracs = [1,0.9,0.8])
+target_level_stats = summarize(assessment_stats)
+print(pprint.pformat(target_level_stats))
+```
+Output:
+```
+{'ca_rmsd': tensor(    0.000),
+ 'clash_info': {'100': {'energy': tensor(2.010),
+                        'num_atom_pairs': 308580,
+                        'num_clashes': 16},
+                '80': {'energy': tensor(0.),
+                       'num_atom_pairs': 308580,
+                       'num_clashes': 0},
+                '90': {'energy': tensor(0.),
+                       'num_atom_pairs': 308580,
+                       'num_clashes': 0}},
+ 'dihedral_counts': tensor([98, 57, 12,  7]),
+ 'mae_sr': tensor(0.520),
+ 'mean_mae': tensor([28.504, 22.006, 73.557, 45.663]),
+ 'num_sc': 98,
+ 'rmsd': tensor(0.743),
+ 'seq_len': 133}
+```
+
+In the example above, `assessment_stats` contains residue level information regarding dihedral MAE, RMSD, clashing atom pairs, etc. The `summarize` function produces target-level statistics by averaging over all residues with at least two side-chain atoms. For this target, a total of 138 residues were analyzed, and 98 had at least two side chain atoms (i.e. were not Glycine or Alanine).
+
+# Code Organization
 
 ## common
 
