@@ -5,15 +5,8 @@ from abc import abstractmethod
 from typing import Optional, Dict
 
 import torch
-from pytorch3d.transforms import (  # noqa
-    quaternion_multiply,  # noqa
-    quaternion_to_matrix,  # noqa
-    matrix_to_quaternion,  # noqa
-    quaternion_invert,  # noqa
-    quaternion_apply  # noqa
-)
 from torch import Tensor
-
+from protein_learning.common.transforms import matrix_to_quaternion
 from protein_learning.common.data.data_types.model_input import ExtraInput
 from protein_learning.common.data.data_types.protein import Protein
 from protein_learning.common.helpers import rotation_from_3_points, exists

@@ -23,7 +23,7 @@ positional arguments:
 optional arguments:
   -h, --help            show this help message and exit
   --pdb_path_out PDB_PATH_OUT
-                        path to save projected pdb to (dafaults to post-processed-<input pdb name>.pdb (default: None)
+                        path to save projected pdb to (defaults to post-processed-<input pdb name>.pdb (default: None)
   --steric_wt STERIC_WT
                         weight to use for steric clash loss (default: 0.2)
   --steric_tol_allowance STERIC_TOL_ALLOWANCE

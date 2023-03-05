@@ -15,7 +15,9 @@ from protein_learning.common.global_constants import get_logger
 from protein_learning.common.helpers import exists, default
 from protein_learning.features.feature_config import FeatureName
 from protein_learning.features.feature_config import InputFeatureConfig
-from protein_learning.features.feature_generator import FeatureGenerator, get_input_features
+from protein_learning.features.feature_generator import (
+    FeatureGenerator, get_input_features
+)
 from protein_learning.features.input_features import InputFeatures
 from protein_learning.features.masking.inter_chain import (
     InterChainMaskGenerator
@@ -35,7 +37,7 @@ max_value = lambda x: torch.finfo(x.dtype).max  # noqa
 
 
 def select_chain_to_mask(
-        protein: Protein,
+    protein: Protein,
 ) -> Tensor:
     """Selects ids of chain to mask"""
     partition, idx = protein.chain_indices, 0
@@ -50,26 +52,34 @@ class DefaultFeatureGenerator(FeatureGenerator):
     """Feature Generator with masking functionality"""
 
     def __init__(
-            self,
-            config: InputFeatureConfig,
-            intra_chain_mask_kwargs: Optional[Dict],
-            inter_chain_mask_kwargs: Optional[Dict],
-            mask_feats: bool = False,
-            mask_seq: bool = False,
-            mask_feat_n_seq_indep_prob: float = 0,
-            select_ids_to_mask_fn: Optional[Callable] = None,
-            coord_noise: float = 0,
-            apply_masks: bool = True,
+        self,
+        config: InputFeatureConfig,
+        intra_chain_mask_kwargs: Optional[Dict],
+        inter_chain_mask_kwargs: Optional[Dict],
+        mask_feats: bool = False,
+        mask_seq: bool = False,
+        mask_feat_n_seq_indep_prob: float = 0,
+        select_ids_to_mask_fn: Optional[Callable] = None,
+        coord_noise: float = 0,
+        apply_masks: bool = True,
     ):
         super(DefaultFeatureGenerator, self).__init__(config=config)
 
-        self.intra_mask = IntraChainMaskGenerator(
-            strat_n_weight_kwargs=intra_chain_mask_kwargs,
-        ) if exists(intra_chain_mask_kwargs) else None
+        self.intra_mask = (
+            IntraChainMaskGenerator(
+                strat_n_weight_kwargs=intra_chain_mask_kwargs,
+            )
+            if exists(intra_chain_mask_kwargs)
+            else None
+        )
         logger.info(f"got intra-mask args : {intra_chain_mask_kwargs}")
-        self.inter_mask = InterChainMaskGenerator(
-            strat_n_weight_kwargs=inter_chain_mask_kwargs,
-        ) if exists(inter_chain_mask_kwargs) else None
+        self.inter_mask = (
+            InterChainMaskGenerator(
+                strat_n_weight_kwargs=inter_chain_mask_kwargs,
+            )
+            if exists(inter_chain_mask_kwargs)
+            else None
+        )
         logger.info(f"got inter-mask args : {intra_chain_mask_kwargs}")
         # what to mask
         self.mask_seq, self.mask_feats = mask_seq, mask_feats
@@ -87,10 +97,7 @@ class DefaultFeatureGenerator(FeatureGenerator):
 
         # sanity check
         if apply_masks:
-            assert config.pad_embeddings and (
-                    exists(intra_chain_mask_kwargs) or
-                    exists(inter_chain_mask_kwargs)
-            )
+            assert config.pad_embeddings and (exists(intra_chain_mask_kwargs) or exists(inter_chain_mask_kwargs))
 
     def generate_masks(self, protein: Protein, extra: ExtraInput, native: Optional[Protein] = None):
         """Generate seq/feature/pair/chain masks"""
@@ -104,7 +111,7 @@ class DefaultFeatureGenerator(FeatureGenerator):
             n_res=len(ids_to_mask),
             coords=protein.atom_coords[ids_to_mask],
             native=native,
-            **extra.intra_chain_mask_kwargs(ids_to_mask)
+            **extra.intra_chain_mask_kwargs(ids_to_mask),
         )
         if self.mask_seq:
             seq_mask = _mask()
@@ -132,9 +139,12 @@ class DefaultFeatureGenerator(FeatureGenerator):
         return seq_mask, feat_mask, inter_chain_pair_mask
 
     def generate_features(
-            self,
-            protein: Protein,
-            extra: Optional[ExtraInput] = None,
+        self,
+        protein: Protein,
+        extra: Optional[ExtraInput] = None,
+        feat_mask: Tensor = None,
+        seq_mask: Tensor = None,
+        inter_chain_pair_mask: Tensor = None,
     ) -> InputFeatures:
         """Generate ProteinModel input features"""
         native = getattr(extra, "native", None)
@@ -142,7 +152,10 @@ class DefaultFeatureGenerator(FeatureGenerator):
             print("[Warning]: missing native protein in extra input")
         seq, coords = protein.seq, protein.atom_coords
         mask_info = self.generate_masks(protein, extra=extra, native=native)
-        seq_mask, feat_mask, inter_chain_pair_mask = mask_info
+        _seq_mask, _feat_mask, _inter_chain_pair_mask = mask_info
+        seq_mask = default(seq_mask, _seq_mask)
+        feat_mask = default(feat_mask, _feat_mask)
+        inter_chain_pair_mask = default(inter_chain_pair_mask, _inter_chain_pair_mask)
         res_extra, pair_extra = extra.extra_feats(protein)
 
         # Generate the (unmasked) features
@@ -163,12 +176,11 @@ class DefaultFeatureGenerator(FeatureGenerator):
         # Apply inter-chain pair mask
         if exists(inter_chain_pair_mask) and self.apply_mask and self.mask_feats:
             feats = mask_inter_chain_pair_features(feats=feats, pair_mask=inter_chain_pair_mask)
-            logger.info(f"[inter-chain] masked : "
-                        f"{inter_chain_pair_mask[inter_chain_pair_mask].numel()}"
-                        f"/{inter_chain_pair_mask.numel()}")
-
-
-
+            logger.info(
+                f"[inter-chain] masked : "
+                f"{inter_chain_pair_mask[inter_chain_pair_mask].numel()}"
+                f"/{inter_chain_pair_mask.numel()}"
+            )
 
         input_feats = InputFeatures(
             features=feats,
@@ -176,9 +188,9 @@ class DefaultFeatureGenerator(FeatureGenerator):
             length=len(seq),
             inter_chain_mask=inter_chain_pair_mask,
             feat_mask=feat_mask,
-            seq_mask=seq_mask
+            seq_mask=seq_mask,
         ).maybe_add_batch()
-        #TODO: hack!
+        # TODO: hack!
         if res_extra is not None:
             res_extra_desc, pair_extra_desc = extra.extra_feat_descs(protein)
             res_flags = input_feats["extra_res"]

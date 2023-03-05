@@ -1,7 +1,34 @@
+import os
+os.environ["CUDA_DEVICE_ORDER"] = "PCI_BUS_ID"
+os.environ['OPENBLAS_NUM_THREADS'] = '4'
+os.environ['MKL_NUM_THREADS'] = '4'
+os.environ['OMP_NUM_THREADS'] = '4'
 from protein_learning.models.fbb_design.train import (
     Train,
 )
+from argparse import ArgumentParser, ArgumentDefaultsHelpFormatter
 
+def get_parser():
+    parser = ArgumentParser(description="Pack Side-Chains",  # noqa
+                        epilog='',
+                        formatter_class=ArgumentDefaultsHelpFormatter)
+    add = lambda *args, **kwargs : parser.add_argument(*args, **kwargs)
+
+    add("model")
+    add("pdb_path")
+
+    #I/O args
+    add("--out_folder", default="./",help="directory to store results in")
+    add("--pdb_folder", help="folder containing pdbs to run inference on "\
+        "(will produce results for all pdbs in the referenced folder)")
+    
+    add("--fasta_folder", help="folder with ")
+    
+
+
+
+    flags = ["predict_confidence"]
+    
 
 class Inference(Train):
 
@@ -29,6 +56,9 @@ class Inference(Train):
         return False
 
 if __name__ == "__main__":
+
+
+
     x = Inference()
     ty = "Training" if not x.do_eval else "Evaluation"
     print(f"[INFO] Beginning {ty} for Masked Design Model")

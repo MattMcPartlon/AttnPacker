@@ -85,8 +85,8 @@ def _augment(
 class Train(TrainDesign):
     """Train Docking Model"""
 
-    def __init__(self):
-        super().__init__()
+    def __init__(self, skip_init=False):
+        super().__init__(skip_init=skip_init)
 
     @property
     def use_flags(self):
@@ -145,7 +145,7 @@ class Train(TrainDesign):
         parser.add_argument("--use_tfn", action="store_true")
         parser.add_argument("--coord_noise", default=0, type=float)
         parser.add_argument("--torsion_loss_weight",default=0.2, type=float)
-        parser.add_argument("--no_predict_from_angles",action="store_false",dest="predict_from_angles")
+        #parser.add_argument("--no_predict_from_angles",action="store_false",dest="predict_from_angles")
         parser.add_argument("--predict_bb",action="store_true")
         add_gt_options(parser)
         add_se3_options(parser)
@@ -208,7 +208,7 @@ class Train(TrainDesign):
                 depth=se3_args.se3_depth,
             ) if self.args.use_tfn else None,
             torsion_loss_weight=self.args.torsion_loss_weight,
-            predict_from_angles=args.predict_from_angles
+            predict_from_angles=False,#args.predict_from_angles
         )
 
     @property

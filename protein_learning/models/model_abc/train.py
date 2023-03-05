@@ -40,8 +40,8 @@ from protein_learning.common.global_config import GlobalConfig
 from protein_learning.common.helpers import exists, default
 from protein_learning.models.model_abc.protein_model import ProteinModel
 from protein_learning.assessment.model_eval.model_evaluator import ModelEvaluator, StatsConfig
-from protein_learning.assessment.model_eval.genetic_alg.ga_evaluator import GAEvaluator
-from protein_learning.assessment.model_eval.genetic_alg.utils import add_ga_args
+#from protein_learning.assessment.model_eval.genetic_alg.ga_evaluator import GAEvaluator
+#from protein_learning.assessment.model_eval.genetic_alg.utils import add_ga_args
 import numpy as np
 
 # _set_jit_fusion_options()
@@ -173,8 +173,8 @@ def get_default_parser_for_eval():
     parser.add_argument("--n_replicas", type=int, default=1)
     parser.add_argument("--model_path", type=str, default=None)
     parser.add_argument("--max_len", type=int, default=500)
-    parser.add_argument("--do_ga", action="store_true")
-    add_ga_args(parser)
+    #parser.add_argument("--do_ga", action="store_true")
+    #add_ga_args(parser)
     parser, _ = add_stats_options(parser)
     add_feat_gen_groups(parser)
     return parser
@@ -195,44 +195,34 @@ def default_global_override_for_eval(args):
 class TrainABC:
     """Train a model"""
 
-    def __init__(self):
-        self.do_eval = sys.argv[-1] == "--eval"
-        if self.do_eval:
-            eval_parser = get_default_parser_for_eval()
-            self.add_extra_cmd_line_options_for_eval(eval_parser)
-            self.eval_args, self.eval_groups = get_args_n_groups(eval_parser)
-            train_parser = self.add_extra_cmd_line_options(get_default_parser())
-            (train_args, train_groups) = get_args_n_groups(train_parser, ["none"])
-            global_override = default_global_override_for_eval(self.eval_args)
-            global_override.update(self.global_override_eval)
+    def __init__(self, skip_init = False):
+        self.do_eval=True
+        """
+        self.do_eval=True
+        eval_parser = get_default_parser_for_eval()
+        self.add_extra_cmd_line_options_for_eval(eval_parser)
+        self.eval_args, self.eval_groups = get_args_n_groups(eval_parser)
+        train_parser = self.add_extra_cmd_line_options(get_default_parser())
+        (train_args, train_groups) = get_args_n_groups(train_parser, ["none"])
+        global_override = default_global_override_for_eval(self.eval_args)
+        global_override.update(self.global_override_eval)
 
 
-            print(f"global override\n {global_override}")
-            print(f"model override\n {self.model_override_eval}")
+        print(f"global override\n {global_override}")
+        print(f"model override\n {self.model_override_eval}")
 
-            self.config, self.args, self.arg_groups = load_args_for_eval(
-                global_config_path=self.eval_args.global_config_path,
-                model_config_path=self.eval_args.model_config_path,
-                model_override=self.model_override_eval,
-                global_override=global_override,
-                default_model_args=train_args,
-                default_model_arg_groups=train_groups,
-            )
-
-        else:
-            parser = get_default_parser()
-            self.add_extra_cmd_line_options(parser)
-            (args, groups), defaults = get_args_n_groups(parser), parser.parse_args(["none"])
-            self.config, self.args, self.arg_groups = load_n_save_args(
-                args,
-                groups,
-                defaults,
-                suffix=self.model_name,
-                global_override=self.global_override,
-                model_override=self.model_override,
-            )
+        self.config, self.args, self.arg_groups = load_args_for_eval(
+            global_config_path=self.eval_args.global_config_path,
+            model_config_path=self.eval_args.model_config_path,
+            model_override=self.model_override_eval,
+            global_override=global_override,
+            default_model_args=train_args,
+            default_model_arg_groups=train_groups,
+        )
         self.pad_embeddings = self.args.mask_seq or self.args.mask_feats
         self._setup()
+        """
+        pass
 
     def _setup(self):
         pass

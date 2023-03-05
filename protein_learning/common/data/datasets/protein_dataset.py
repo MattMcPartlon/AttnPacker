@@ -14,12 +14,15 @@ from protein_learning.common.data.datasets.utils import (
 )
 from protein_learning.common.global_constants import get_logger
 from protein_learning.common.helpers import default, exists
-from protein_learning.common.io.dips_utils import load_proteins_from_dill
+#from protein_learning.common.io.dips_utils import load_proteins_from_dill
 from protein_learning.features.feature_generator import FeatureGenerator
 
 logger = get_logger(__name__)
 
-cast_list = lambda x: x if isinstance(x, list) else [x]
+cast_list = lambda x: x if isinstance(x, list) else [x] # noqa
+
+def load_proteins_from_dill(*args,**kwargs):
+    raise Exception("Removed")
 
 
 class ProteinDataset(ProteinDatasetABC):

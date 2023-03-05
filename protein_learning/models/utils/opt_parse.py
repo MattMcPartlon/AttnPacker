@@ -4,7 +4,6 @@ from protein_learning.common.helpers import default, exists
 
 namespace_2_dict = lambda x: vars(x) if isinstance(x, Namespace) else x
 
-
 def add_esm_options(parser):
     esm_args = parser.add_argument_group("esm_args")
     esm_args.add_argument("--use_esm_prob", type=float, default=1)
@@ -15,7 +14,6 @@ def add_esm_options(parser):
     esm_args.add_argument("--esm_msa_dir", default=None)
     esm_args.add_argument("--max_msa_seqs", type=int, default=128)
     return parser, esm_args
-
 
 def add_default_loss_options(parser):
     # Loss options

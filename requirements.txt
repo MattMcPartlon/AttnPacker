@@ -1,0 +1,10 @@
+Bio==1.5.3
+cached_property==1.5.2
+einops==0.6.0
+filelock==3.9.0
+numpy==1.23.5
+scipy==1.9.3
+scoring==0.0.9
+torch==1.13.0
+torchtyping==0.1.4
+typeguard==2.13.3

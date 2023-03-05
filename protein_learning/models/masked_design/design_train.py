@@ -4,7 +4,7 @@ import os
 os.environ["CUDA_DEVICE_ORDER"] = "PCI_BUS_ID"
 os.environ['OPENBLAS_NUM_THREADS'] = '4'
 os.environ['MKL_NUM_THREADS'] = '4'
-os.environ['OMP_NUM_THREADS'] = '4'
+os.environ['OMP_NUM_THREADS'] ='4'
 from abc import abstractmethod
 from functools import partial
 from typing import List
@@ -17,16 +17,16 @@ from protein_learning.features.masking.partition import (
 from protein_learning.models.masked_design.masked_design_utils import FeatureFlagGen
 from protein_learning.models.model_abc.train import TrainABC
 from protein_learning.models.utils.dataset_augment_fns import impute_cb, partition_chain
-from protein_learning.models.utils.esm_embedder import ESMInputEmbedder
-from protein_learning.models.utils.esm_input import ESMFeatGen
-from protein_learning.models.utils.opt_parse import add_esm_options, add_flag_args
+#from protein_learning.models.utils.esm_embedder import ESMInputEmbedder
+#from protein_learning.models.utils.esm_input import ESMFeatGen
+from protein_learning.models.utils.opt_parse import add_flag_args, add_esm_options
 
 
 class TrainDesign(TrainABC):
     """Train Masked Design Model"""
 
-    def __init__(self):
-        super(TrainDesign, self).__init__()
+    def __init__(self, skip_init=False):
+        super(TrainDesign, self).__init__(skip_init=skip_init)
 
     @abstractmethod
     def _add_extra_cmd_line_options(self, parser):

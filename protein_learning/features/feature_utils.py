@@ -6,7 +6,7 @@ from typing import Optional, List, Tuple, Dict, Any, Union
 
 import torch
 from einops import rearrange  # noqa
-from pytorch3d.transforms import (  # noqa
+from protein_learning.common.transforms import (  # noqa
     quaternion_multiply,  # noqa
     quaternion_to_matrix,  # noqa
     matrix_to_quaternion,  # noqa
