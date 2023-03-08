@@ -2,10 +2,12 @@
 from __future__ import annotations
 import os
 
+# eb47fd6 dec 22
+# 3cb9de3 dec 28
 os.environ["CUDA_DEVICE_ORDER"] = "PCI_BUS_ID"
-os.environ['OPENBLAS_NUM_THREADS'] = '4'
-os.environ['MKL_NUM_THREADS'] = '4'
-os.environ['OMP_NUM_THREADS'] = '4'
+os.environ["OPENBLAS_NUM_THREADS"] = "4"
+os.environ["MKL_NUM_THREADS"] = "4"
+os.environ["OMP_NUM_THREADS"] = "4"
 from functools import partial
 
 import numpy as np
@@ -13,17 +15,13 @@ import torch
 from protein_learning.features.input_embedding import InputEmbedding
 from protein_learning.models.masked_design.design_train import TrainDesign
 from protein_learning.models.masked_design.masked_design_utils import augment
-from protein_learning.networks.geometric_gt.geom_gt_config import (
-    add_gt_options, get_configs as get_gt_configs
-)
+from protein_learning.networks.geometric_gt.geom_gt_config import add_gt_options, get_configs as get_gt_configs
 from protein_learning.networks.loss.loss_fn import LossConfig, DefaultLossFunc
-from protein_learning.common.helpers import default
 from protein_learning.features.default_feature_generator import DefaultFeatureGenerator
-from protein_learning.models.masked_design.masked_design_utils import FeatureFlagGen
 from protein_learning.common.data.data_types.protein import Protein
 from protein_learning.models.fbb_design.fbb_model import FBBDesigner
 from protein_learning.networks.se3_transformer.se3_transformer_config import SE3TransformerConfig, add_se3_options
-from protein_learning.models.utils.dataset_augment_fns import impute_cb, partition_chain
+from protein_learning.models.utils.dataset_augment_fns import impute_cb
 from protein_learning.common.data.data_types.model_input import ExtraInput
 from protein_learning.common.data.data_types.protein import Protein
 from protein_learning.common.protein_constants import AA_TO_INDEX
@@ -36,20 +34,20 @@ from protein_learning.common.helpers import exists
 class ExtraFBB(ExtraInput):
     """Store Encoded Native Sequence"""
 
-    def __init__(self,
-                 native_seq_enc: Tensor,
-                 true_rigids: Rigids,
-                 decoy_rigids: Rigids,
-                 native_protein: Protein,
-                 decoy_protein: Protein,
-                 ):
+    def __init__(
+        self,
+        native_seq_enc: Tensor,
+        true_rigids: Rigids,
+        decoy_rigids: Rigids,
+        native_protein: Protein,
+        decoy_protein: Protein,
+    ):
         super(ExtraFBB, self).__init__()
         self.true_rigids = true_rigids
         self.decoy_rigids = decoy_rigids
         self.native = native_protein
         self.decoy = decoy_protein
-        self.native_seq_enc = native_seq_enc if native_seq_enc.ndim == 2 \
-            else native_seq_enc.unsqueeze(0)
+        self.native_seq_enc = native_seq_enc if native_seq_enc.ndim == 2 else native_seq_enc.unsqueeze(0)
 
     def crop(self, start, end) -> ExtraFBB:
         """Crop native seq. encoding"""
@@ -67,8 +65,8 @@ class ExtraFBB(ExtraInput):
 
 
 def _augment(
-        decoy_protein: Protein,
-        native_protein: Protein,
+    decoy_protein: Protein,
+    native_protein: Protein,
 ) -> ExtraFBB:
     """Augment function for storing native seq. encoding in ModelInput object"""
     seq = native_protein.seq
@@ -85,8 +83,8 @@ def _augment(
 class Train(TrainDesign):
     """Train Docking Model"""
 
-    def __init__(self, skip_init=False):
-        super().__init__(skip_init=skip_init)
+    def __init__(self):
+        super(Train, self).__init__()
 
     @property
     def use_flags(self):
@@ -103,39 +101,17 @@ class Train(TrainDesign):
 
     @property
     def load_optim(self):
-        return False
+        return True
 
     @property
     def global_override(self):
         """kwargs to override in global config"""
-        return dict(
-            max_len=440,
-            lr=0.0005,
-            raise_exceptions=False,
-            checkpoint_idx=-1,
-            gpu_indices=["0"],
-            out_root='/mnt/local/mmcpartlon/fbb_design_ft/models',
-            train_decoy_folder = "/mnt/data/RaptorXCommon/TrainTestData/BCData/Jan2020/Chains",
-            train_list = "/mnt/data/RaptorXCommon/TrainTestData/BCData/Jan2020/LISTS/BC40.trainA.list",
-            train_native_folder = '/mnt/data/RaptorXCommon/TrainTestData/BCData/Jan2020/Chains',
-            test_decoy_folder = '/mnt/local/mmcpartlon/TrainTestData/test_data/CASP/casp_all',
-            test_list = '/mnt/local/mmcpartlon/TrainTestData/test_data/LISTS/casp_all.list',
-            test_native_folder = '/mnt/local/mmcpartlon/TrainTestData/test_data/CASP/casp_all',
-            test_every=500,
-            )if not self.do_eval else dict(checkpoint_idx=-1)
-
-    def _add_extra_cmd_line_options(self, parser):
-        parser.add_argument("--force_override", action="store_true")
-        parser.add_argument("--global_config_override_path", default=None)
-    
-    @property
-    def allow_missing_nn_modules(self):
-        return True #self.args.one_hot_cdrs and not self.do_eval
+        return dict(max_len=440, lr=0.0005)  # ,checkpoint_idx=14)#raise_exceptions=False, max_len=388)
 
     @property
     def model_override(self):
         """kwargs to override in global model config"""
-        return dict(sc_rmsd_wt=1.75)
+        return dict()
 
     def _model_override_eval(self):
         """Kwargs to override in model config for eval"""
@@ -144,12 +120,12 @@ class Train(TrainDesign):
     def _add_extra_cmd_line_options(self, parser):
         parser.add_argument("--use_tfn", action="store_true")
         parser.add_argument("--coord_noise", default=0, type=float)
-        parser.add_argument("--torsion_loss_weight",default=0.2, type=float)
-        #parser.add_argument("--no_predict_from_angles",action="store_false",dest="predict_from_angles")
-        parser.add_argument("--predict_bb",action="store_true")
+        parser.add_argument("--torsion_loss_weight", default=0.2, type=float)
+        parser.add_argument("--no_predict_from_angles", action="store_false", dest="predict_from_angles")
+        parser.add_argument("--predict_bb", action="store_true")
         add_gt_options(parser)
         add_se3_options(parser)
-        
+
         return parser
 
     def _add_extra_cmd_line_options_for_eval(self, parser):
@@ -158,11 +134,7 @@ class Train(TrainDesign):
     @property
     def dataset_transform_fn(self):  # add noise + impute cb
         """Transform native and decoy input"""
-        return partial(
-            _transform,
-            noise=self.args.coord_noise,
-            eval=self.do_eval
-        )
+        return partial(_transform, noise=self.args.coord_noise, eval=self.do_eval)
 
     @property
     def apply_masks(self):
@@ -172,8 +144,8 @@ class Train(TrainDesign):
     def get_val_feat_gen(self, arg_groups, feature_config, apply_masks):  # TODO
         return DefaultFeatureGenerator(
             config=feature_config,
-            intra_chain_mask_kwargs=vars(arg_groups['intra_chain_mask_args']),
-            inter_chain_mask_kwargs=vars(arg_groups['inter_chain_mask_args']),
+            intra_chain_mask_kwargs=vars(arg_groups["intra_chain_mask_args"]),
+            inter_chain_mask_kwargs=vars(arg_groups["inter_chain_mask_args"]),
             **vars(arg_groups["feat_gen_args"]),
             apply_masks=apply_masks,
         )
@@ -189,7 +161,7 @@ class Train(TrainDesign):
                     res_dim=args.node_dim_hidden,
                     pair_dim=args.pair_dim_hidden,
                     output_atom_tys=self.output_atom_tys,
-                    **vars(arg_groups["loss_args"])
+                    **vars(arg_groups["loss_args"]),
                 )
             ),
             gt_configs=get_gt_configs(
@@ -197,7 +169,6 @@ class Train(TrainDesign):
                 pair_dim=args.pair_dim_hidden,
                 opts=arg_groups["gt_args"],
             ),
-            coord_dim_out=len(self.output_atom_tys),
             se3_config=SE3TransformerConfig(
                 fiber_in=se3_args.fiber_in,
                 fiber_hidden=se3_args.fiber_hidden,
@@ -206,15 +177,16 @@ class Train(TrainDesign):
                 dim_heads=se3_args.se3_dim_heads,
                 edge_dim=se3_args.se3_edge_dim,
                 depth=se3_args.se3_depth,
-            ) if self.args.use_tfn else None,
-            torsion_loss_weight=self.args.torsion_loss_weight,
-            predict_from_angles=False,#args.predict_from_angles
+            )
+            if self.args.use_tfn
+            else None,
         )
 
     @property
     def input_augment_fn(self):
         """Augment model input"""
         return _augment
+
 
 def _transform(decoy, native, noise=0, eval=False):
     assert len(native) == len(decoy)

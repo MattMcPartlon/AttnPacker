@@ -12,10 +12,18 @@ from protein_learning.networks.tfn.repr.cache_utils import cache_dir
 from protein_learning.networks.tfn.repr.fiber import to_order
 from protein_learning.networks.tfn.repr.irr_repr import irr_repr, spherical_harmonics
 from protein_learning.networks.tfn.repr.spherical_harmonics import clear_spherical_harmonics_cache
+from filelock import FileLock
+import pickle
+import gzip
 
-# constants
 
-CACHE_PATH = os.path.expanduser('~/.cache.equivariant_attention') if not exists(os.environ.get('CLEAR_CACHE')) else None
+# M.M I have no idea what kind of psychopath would cache to a hidden directory in ~/
+# Just realized this was happening as the AttnPacker code was being prepared.
+# Be very careful with cachine the basis weights, they are not deterministic,
+# So you will *NOT* be able to run the same model on different machines
+# Without copying over the weights in this cache... Imagine my frustration when
+# Trying to figure this out.
+CACHE_PATH = os.path.expanduser("~/.cache.equivariant_attention") if not exists(os.environ.get("CLEAR_CACHE")) else None
 
 # todo (figure ot why this was hard coded in official repo)
 
@@ -24,11 +32,12 @@ RANDOM_ANGLES = [
     [4.93325116, 6.12697327, 4.14574096],
     [0.53878964, 4.09050444, 5.36539036],
     [2.16017393, 3.48835314, 5.55174441],
-    [2.52385107, 0.2908958, 3.90040975]
+    [2.52385107, 0.2908958, 3.90040975],
 ]
 
 
 # helpers
+
 
 @contextmanager
 def null_context():
@@ -37,24 +46,25 @@ def null_context():
 
 # functions
 
+
 def get_matrix_kernel(A, eps=1e-10):
-    '''
+    """
     Compute an orthonormal basis of the kernel (x_1, x_2, ...)
     A x_i = 0
     scalar_product(x_i, x_j) = delta_ij
 
     :param A: matrix
     :return: matrix where each row is a basis vector of the kernel of A
-    '''
+    """
     _u, s, v = torch.svd(A)
     kernel = v.t()[s < eps]
     return kernel
 
 
 def get_matrices_kernel(As, eps=1e-10):
-    '''
+    """
     Computes the common kernel of all the As matrices
-    '''
+    """
     matrix = torch.cat(As, dim=0)
     return get_matrix_kernel(matrix, eps)
 
@@ -110,8 +120,8 @@ def kron(a, b):
     :type b: torch.Tensor
     :rtype: torch.Tensor
     """
-    res = einsum('... i j, ... k l -> ... i k j l', a, b)
-    return rearrange(res, '... i j k l -> ... (i j) (k l)')
+    res = einsum("... i j, ... k l -> ... i k j l", a, b)
+    return rearrange(res, "... i j k l -> ... (i j) (k l)")
 
 
 def get_R_tensor(order_out, order_in, a, b, c):
@@ -119,19 +129,19 @@ def get_R_tensor(order_out, order_in, a, b, c):
 
 
 def sylvester_submatrix(order_out, order_in, J, a, b, c):
-    ''' generate Kronecker product matrix for solving the Sylvester equation in subspace J '''
+    """generate Kronecker product matrix for solving the Sylvester equation in subspace J"""
     R_tensor = get_R_tensor(order_out, order_in, a, b, c)  # [m_out * m_in, m_out * m_in]
     R_irrep_J = irr_repr(J, a, b, c)  # [m, m]
 
     R_tensor_identity = torch.eye(R_tensor.shape[0])
     R_irrep_J_identity = torch.eye(R_irrep_J.shape[0])
 
-    return kron(R_tensor, R_irrep_J_identity) - kron(R_tensor_identity,
-                                                     R_irrep_J.t())  # [(m_out * m_in) * m, (m_out * m_in) * m]
+    return kron(R_tensor, R_irrep_J_identity) - kron(
+        R_tensor_identity, R_irrep_J.t()
+    )  # [(m_out * m_in) * m, (m_out * m_in) * m]
 
 
 @cache_dir(CACHE_PATH)
-# TODO change to 32 bit?
 @torch_default_dtype(torch.float64)
 @torch.no_grad()
 def basis_transformation_Q_J(J, order_in, order_out, random_angles=RANDOM_ANGLES):
@@ -143,10 +153,34 @@ def basis_transformation_Q_J(J, order_in, order_out, random_angles=RANDOM_ANGLES
     """
     sylvester_submatrices = [sylvester_submatrix(order_out, order_in, J, a, b, c) for a, b, c in random_angles]
     null_space = get_matrices_kernel(sylvester_submatrices)
-    assert null_space.size(0) == 1, null_space.size()  # unique subspace solution
+    # unique subspace solution
+    assert null_space.size(0) == 1, null_space.size()
     Q_J = null_space[0]  # [(m_out * m_in) * m]
     Q_J = Q_J.view(to_order(order_out) * to_order(order_in), to_order(J))  # [m_out * m_in, m]
     return Q_J.float()  # [m_out * m_in, m]
+
+
+@torch_default_dtype(torch.float64)
+@torch.no_grad()
+def _basis_transformation_Q_J(dirname, J, order_in, order_out):
+    """
+    :param J: order of the spherical harmonics
+    :param order_in: order of the input representation
+    :param order_out: order of the output representation
+    :return: one part of the Q^-1 matrix of the article
+    """
+    indexfile = os.path.join(dirname, "index.pkl")
+    lock = FileLock(os.path.join(dirname, "mutex"))
+    key = ((J, order_in, order_out), frozenset(), None)
+    with lock:
+        with open(indexfile, "rb") as file:
+            index = pickle.load(file)
+    filename = index[key]
+    filepath = os.path.join(dirname, filename)
+    with lock:
+        with gzip.open(filepath, "rb") as file:
+            result = pickle.load(file)
+    return result
 
 
 def precompute_sh(r_ij, max_J):
@@ -163,7 +197,7 @@ def precompute_sh(r_ij, max_J):
     return Y_Js
 
 
-def get_basis(r_ij, max_degree, differentiable=False):
+def get_basis(r_ij, max_degree, differentiable=False, dirname=None):
     """Return equivariant weight basis (basis)
 
     Call this function *once* at the start of each forward pass of the model.
@@ -198,7 +232,10 @@ def get_basis(r_ij, max_degree, differentiable=False):
             K_Js = []
             for J in range(abs(d_in - d_out), d_in + d_out + 1):
                 # Get spherical harmonic projection matrices
-                Q_J = basis_transformation_Q_J(J, d_in, d_out)
+                if exists(dirname):
+                    Q_J = _basis_transformation_Q_J(dirname, J, d_in, d_out)
+                else:
+                    Q_J = basis_transformation_Q_J(J, d_in, d_out)
                 Q_J = Q_J.type(dtype).to(device)
 
                 # Create kernel from spherical harmonics
@@ -208,7 +245,7 @@ def get_basis(r_ij, max_degree, differentiable=False):
             # Reshape so can take linear combinations with a dot product
             K_Js = torch.stack(K_Js, dim=-1)
             size = (*r_ij.shape[:-1], 1, to_order(d_out), 1, to_order(d_in), to_order(min(d_in, d_out)))
-            basis[f'{d_in},{d_out}'] = K_Js.view(*size)
+            basis[f"{d_in},{d_out}"] = K_Js.view(*size)
 
     # extra detach for safe measure
     if not differentiable:
