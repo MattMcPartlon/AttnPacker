@@ -5,11 +5,17 @@ This repo contains code for AttnPacker
 Pre-trained models, and PDB files used to generate all results are available at  https://zenodo.org/record/7559358#.Y83tYuzMI0Q
 
 # Install
-```
-$ git clone git@github.com:MattMcPartlon/AttnPacker.git
-$ conda create --name <env_name> --file requirements.txt
+
 
 ```
+$ git clone git@github.com:MattMcPartlon/AttnPacker.git
+$ conda create -n attnpacker python=3.8
+$ conda activate attnpacker
+$ pip install -r ./AttnPacker/requirements.txt
+```
+
+Note: The default pytorch installation may not include GPU support. Since this is often system-specific it is left to the user to change this.
+
 
 # Examples
 
