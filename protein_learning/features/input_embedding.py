@@ -42,8 +42,7 @@ class RawFeatEncoding(nn.Module):  # noqa
 
 
 class FeatEmbedding(nn.Module):  # noqa
-    """One Hot encoding (wrapped, so it can be used in module dict)
-    """
+    """One Hot encoding (wrapped, so it can be used in module dict)"""
 
     def __init__(self, num_classes, embed_dim, mult=1):
         super(FeatEmbedding, self).__init__()
@@ -57,8 +56,7 @@ class FeatEmbedding(nn.Module):  # noqa
         return self.mult * self.embed_dim
 
     def get_offsets(self, feat: Tensor):
-        """values to shift bins by for case of multiple embeddings
-        """
+        """values to shift bins by for case of multiple embeddings"""
         if not exists(self.offsets):
             offsets = [i * self.num_classes for i in range(self.mult)]
             self.offsets = torch.tensor(offsets, device=feat.device, dtype=torch.long)
@@ -77,8 +75,7 @@ class FeatEmbedding(nn.Module):  # noqa
 
 
 class FeatOneHotEncoding(nn.Module):  # noqa
-    """One Hot encoding (wrapped, so it can be used in module dict)
-    """
+    """One Hot encoding (wrapped, so it can be used in module dict)"""
 
     def __init__(self, num_classes, mult: int = 1, std_noise: float = 0):
         """One hot feature encoding
@@ -107,17 +104,15 @@ class FeatOneHotEncoding(nn.Module):  # noqa
 
 
 class RBFEncoding(nn.Module):  # noqa
-    """RBF Encoding (wrapped, so it can be used in module dict)
-    """
+    """RBF Encoding (wrapped, so it can be used in module dict)"""
 
     def __init__(self, radii: List[float], mult: int = 1, sigma: float = 4):
-        """RBF feature encoding
-        """
+        """RBF feature encoding"""
         super(RBFEncoding, self).__init__()
         radii = torch.tensor(radii).float()
         self.radii = repeat(radii, "r -> m r", m=mult)
         self.mult = mult
-        self.sigma_sq = default(sigma ** 2, torch.mean(radii[:-1] - radii[1:]))
+        self.sigma_sq = default(sigma**2, torch.mean(radii[:-1] - radii[1:]))
         self.embedding_dim = radii.numel() * self.mult
 
     def forward(self, feat: Feature):
@@ -127,18 +122,17 @@ class RBFEncoding(nn.Module):  # noqa
         raw_data = raw_data.unsqueeze(-1)
         shape_diff = raw_data.ndim - self.radii.ndim
         radii = self.radii[(None,) * shape_diff].to(raw_data.device)
-        rbf = torch.exp(-torch.clamp_max(torch.square((radii - raw_data) / self.sigma_sq),50))
-        return rbf 
+        rbf = torch.exp(-torch.clamp_max(torch.square((radii - raw_data) / self.sigma_sq), 50))
+        return rbf
 
 
 class FeatFourierEncoding(nn.Module):  # noqa
-    """Fourier (sin and cos) encoding (wrapped so it can be used in module dict)
-    """
+    """Fourier (sin and cos) encoding (wrapped so it can be used in module dict)"""
 
     def __init__(self, n_feats, include_self=False, mult: int = 1):  # noqa
         super(FeatFourierEncoding, self).__init__()
         self.n_feats, self.include_self, self.mult = n_feats, include_self, mult
-        self.num_embeddings = (2 * self.n_feats + (1 if include_self else 0))
+        self.num_embeddings = 2 * self.n_feats + (1 if include_self else 0)
 
     @property
     def embedding_dim(self) -> int:
@@ -150,11 +144,7 @@ class FeatFourierEncoding(nn.Module):  # noqa
         with torch.no_grad():
             to_encode = feat.get_raw_data()
             assert to_encode.shape[-1] == self.mult, f"{to_encode.shape},{self.mult},{feat.name}"
-            return fourier_encode(
-                feat.get_raw_data(),
-                num_encodings=self.n_feats,
-                include_self=self.include_self
-            )
+            return fourier_encode(feat.get_raw_data(), num_encodings=self.n_feats, include_self=self.include_self)
 
 
 def count_embedding_dim(embeddings) -> int:
@@ -163,26 +153,23 @@ def count_embedding_dim(embeddings) -> int:
 
 
 def get_embeddings(
-        fourier_feats: int = None,
-        n_classes: int = None,
-        embed_dim: int = None,
-        mult: int = 1,
-        rbf_radii: Optional[List[float]] = None,
-        rbf_sigma: Optional[float] = 4,
-        std_noise: float = 0,
-        embed_tys: List[FeatureEmbeddingTy] = None,
+    fourier_feats: int = None,
+    n_classes: int = None,
+    embed_dim: int = None,
+    mult: int = 1,
+    rbf_radii: Optional[List[float]] = None,
+    rbf_sigma: Optional[float] = 4,
+    std_noise: float = 0,
+    embed_tys: List[FeatureEmbeddingTy] = None,
 ) -> nn.ModuleDict:
     """Gets embedding dict for input"""
     embeddings = nn.ModuleDict()
     if FeatureEmbeddingTy.EMBED in embed_tys:
-        embeddings["emb"] = FeatEmbedding(
-            n_classes, embed_dim, mult=mult)
+        embeddings["emb"] = FeatEmbedding(n_classes, embed_dim, mult=mult)
     if FeatureEmbeddingTy.ONEHOT in embed_tys:
-        embeddings["one_hot"] = FeatOneHotEncoding(
-            num_classes=n_classes, mult=mult, std_noise=std_noise)
+        embeddings["one_hot"] = FeatOneHotEncoding(num_classes=n_classes, mult=mult, std_noise=std_noise)
     if FeatureEmbeddingTy.FOURIER in embed_tys:
-        embeddings["fourier"] = FeatFourierEncoding(
-            n_feats=fourier_feats, mult=mult)
+        embeddings["fourier"] = FeatFourierEncoding(n_feats=fourier_feats, mult=mult)
     if FeatureEmbeddingTy.NONE in embed_tys:
         embeddings["identity"] = RawFeatEncoding(embed_dim)
     if FeatureEmbeddingTy.RBF in embed_tys:
@@ -201,7 +188,7 @@ class InputEmbedding(nn.Module):  # noqa
         dims, embeddings = self._feat_dims_n_embeddings(feature_config)
         self.scalar_dim, self.pair_dim = dims
         self.scalar_embeddings, self.pair_embeddings = embeddings
-        _print_embedding_info(self.scalar_embeddings, self.pair_embeddings, self.scalar_dim, self.pair_dim)
+        # _print_embedding_info(self.scalar_embeddings, self.pair_embeddings, self.scalar_dim, self.pair_dim)
 
     def forward(self, feats: InputFeatures) -> Tuple[Tensor, Tensor]:
         """Get pair and scalar input features"""
@@ -219,7 +206,7 @@ class InputEmbedding(nn.Module):  # noqa
 
     @staticmethod
     def _feat_dims_n_embeddings(
-            config: InputFeatureConfig
+        config: InputFeatureConfig,
     ) -> Tuple[Tuple[int, int], Tuple[nn.ModuleDict, nn.ModuleDict]]:
         """gets scalar and pair input dimensions as well as embedding/encoding
         functions for each input feature.
@@ -232,8 +219,8 @@ class InputEmbedding(nn.Module):  # noqa
         get_embed_dict = lambda ty: scalar_embeddings if ty == FeatureTy.RESIDUE else pair_embeddings
         for descriptor in config.descriptors:
             name = descriptor.name.value
-            print(f"[INFO] adding embeddings for {name}:"
-                  f" {[e.value for e in descriptor.embed_tys]}")
+            # print(f"[INFO] adding embeddings for {name}:"
+            #      f" {[e.value for e in descriptor.embed_tys]}")
             embed_dict = get_embed_dict(descriptor.ty)
             embed_dict[name] = get_embeddings(
                 embed_tys=descriptor.embed_tys,
@@ -266,12 +253,12 @@ class InputEmbedding(nn.Module):  # noqa
         return (scalar_dim, pair_dim), (scalar_embeddings, pair_embeddings)
 
     def get_feat_dict(
-            self,
-            features: InputFeatures,
-            n: int,
-            feat_names: Optional[List[FeatureName]] = None,
-            only_scalar: bool = False,
-            only_pair: bool = False,
+        self,
+        features: InputFeatures,
+        n: int,
+        feat_names: Optional[List[FeatureName]] = None,
+        only_scalar: bool = False,
+        only_pair: bool = False,
     ):
         feat_dict = {}
         feat_names = default(feat_names, FEATURE_NAMES)
@@ -300,9 +287,9 @@ class InputEmbedding(nn.Module):  # noqa
         return feat_dict
 
     def get_scalar_input(
-            self,
-            features: InputFeatures,
-            leading_shape: Tuple[int, int],
+        self,
+        features: InputFeatures,
+        leading_shape: Tuple[int, int],
     ) -> Union[Tensor, Tuple[Tensor, Dict[str, Tensor]]]:
         """Get scalar input"""
         scalar_feats, feat_dict = [], {}
@@ -321,9 +308,9 @@ class InputEmbedding(nn.Module):  # noqa
         return scalar_feats
 
     def get_pair_input(
-            self,
-            features: InputFeatures,
-            leading_shape: Tuple[int, int, int],
+        self,
+        features: InputFeatures,
+        leading_shape: Tuple[int, int, int],
     ) -> Union[Tensor, Tuple[Tensor, Dict[str, Tensor]]]:
         """Get pair input"""
         pair_feats, feat_dict = [], {}
@@ -348,8 +335,9 @@ class InputEmbedding(nn.Module):  # noqa
             emb_sep = joint_embs[FeatureName.REL_SEP.value](sep).reshape(*leading_shape, -1)
             emb_a = joint_embs[FeatureName.RES_TY.value + "_a"](res_ty).reshape(*leading_shape[:-1], -1)
             emb_b = joint_embs[FeatureName.RES_TY.value + "_b"](res_ty).reshape(*leading_shape[:-1], -1)
-            joint_emb = rearrange(emb_a, '... n d-> ... n () d') + \
-                        rearrange(emb_b, '... n d-> ... () n d') + emb_sep  # noqa
+            joint_emb = (
+                rearrange(emb_a, "... n d-> ... n () d") + rearrange(emb_b, "... n d-> ... () n d") + emb_sep
+            )  # noqa
             pair_feats.append(joint_emb)
 
         pair_feats = torch.cat(pair_feats, dim=-1) if len(pair_feats) > 0 else None

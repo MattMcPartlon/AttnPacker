@@ -15,7 +15,7 @@ from protein_learning.networks.loss.utils import get_loss_func, get_tm_scale
 from protein_learning.networks.loss.violation_loss import (
     BackboneAngleDeviationLoss,
     BackboneBondLenDeviationLoss,
-    InterResidueVDWRepulsiveLoss
+    InterResidueVDWRepulsiveLoss,
 )
 from protein_learning.protein_utils.align.kabsch_align import kabsch_align
 
@@ -45,8 +45,8 @@ def per_residue_mean(x: Tensor, mask: Tensor) -> Tensor:
     x = x.unsqueeze(0) if x.ndim == 3 else x
     atoms_per_res = mask.sum(dim=-1)
     retain_mask = atoms_per_res > 0
-    x = x.masked_fill(~mask.unsqueeze(-1), value=0.)
-    per_res_mean = x.sum(dim=(-1, -2)) / torch.clamp_min(atoms_per_res, 1.)
+    x = x.masked_fill(~mask.unsqueeze(-1), value=0.0)
+    per_res_mean = x.sum(dim=(-1, -2)) / torch.clamp_min(atoms_per_res, 1.0)
     return torch.sum(per_res_mean / torch.sum(retain_mask, dim=-1, keepdim=True))
 
 
@@ -54,12 +54,12 @@ class ViolationLoss(nn.Module):
     """VDW+BondLen+BondAngle Loss"""
 
     def __init__(
-            self,
-            bond_len_wt: float = 1,
-            bond_angle_wt: float = 3,
-            vdw_wt: float = 1,
-            vdw_mean: bool = True,
-            vdw_tol: float = 0.25
+        self,
+        bond_len_wt: float = 1,
+        bond_angle_wt: float = 3,
+        vdw_wt: float = 1,
+        vdw_mean: bool = True,
+        vdw_tol: float = 0.25,
     ):
         super(ViolationLoss, self).__init__()
         self.vdw = InterResidueVDWRepulsiveLoss(tol=vdw_tol, reduce_mean=vdw_mean)
@@ -70,12 +70,7 @@ class ViolationLoss(nn.Module):
         self.vdw_wt = vdw_wt
 
     def forward_from_output(
-            self,
-            output: ModelOutput,
-            baseline: bool = False,
-            vdw_reduce_mean: bool = True,
-            weighted: bool = True,
-            **kwargs
+        self, output: ModelOutput, baseline: bool = False, vdw_reduce_mean: bool = True, weighted: bool = True, **kwargs
     ) -> Dict[str, Tensor]:
         if not baseline:
             coords = output.predicted_coords
@@ -108,7 +103,7 @@ class ViolationLoss(nn.Module):
             atom_ty_order=posns,
             atom_coord_mask=mask,
             residue_indices=indices,
-            bonded_mask=bonded_mask.unsqueeze(0)
+            bonded_mask=bonded_mask.unsqueeze(0),
         )
         bond_wt, vdw_wt, ang_wt = self.bond_len_wt, self.vdw_wt, self.bond_angle_wt
         if not weighted:
@@ -121,15 +116,15 @@ class ViolationLoss(nn.Module):
 
 
 class TMLoss(nn.Module):
-    """Coordinate Loss proportional to (negative) TM-Score
-    """
+    """Coordinate Loss proportional to (negative) TM-Score"""
 
     def __init__(self, eps=1e-8):
         super(TMLoss, self).__init__()
         self.eps = eps
 
-    def forward(self, predicted_coords: torch.Tensor, actual_coords: torch.Tensor,
-                align: bool = True, reduce: bool = True) -> torch.Tensor:  # noqa
+    def forward(
+        self, predicted_coords: torch.Tensor, actual_coords: torch.Tensor, align: bool = True, reduce: bool = True
+    ) -> torch.Tensor:  # noqa
         """Compute TM-Loss
 
         b: batch dimension
@@ -149,12 +144,12 @@ class TMLoss(nn.Module):
         return -calc_tm_torch(dev, reduce=reduce)
 
     def forward_from_output(
-            self,
-            output: ModelOutput,
-            reduce: bool = True,
-            align: bool = True,
-            atom_tys: List[str] = None,
-            baseline: bool = False,
+        self,
+        output: ModelOutput,
+        reduce: bool = True,
+        align: bool = True,
+        atom_tys: List[str] = None,
+        baseline: bool = False,
     ) -> Tensor:
         """Run forward from ModelOutput Object"""
         loss_input = output.get_pred_and_native_coords_and_mask(atom_tys, align_by_kabsch=align)
@@ -167,7 +162,7 @@ class TMLoss(nn.Module):
                 pred_coords[i][mask[i]].unsqueeze(0),
                 native_coords[i][mask[i]].unsqueeze(0),
                 align=baseline,
-                reduce=reduce
+                reduce=reduce,
             )
         return loss
 
@@ -178,20 +173,20 @@ class CoordDeviationLoss(nn.Module):
     l_p distance, for p = 1, 2, ...
     """
 
-    def __init__(self,
-                 p: int = 1,
-                 atom_tys: Optional[List[str]] = None,
-                 loss_fn: Optional[Callable] = None,
-                 ):
+    def __init__(
+        self,
+        p: int = 1,
+        atom_tys: Optional[List[str]] = None,
+        loss_fn: Optional[Callable] = None,
+    ):
         super(CoordDeviationLoss, self).__init__()
-        def_loss = get_loss_func(
-            p, beta=BETA, min_clamp=MIN_COORD_CLAMP, max_clamp=MAX_COORD_CLAMP, reduction="none"
-        )
+        def_loss = get_loss_func(p, beta=BETA, min_clamp=MIN_COORD_CLAMP, max_clamp=MAX_COORD_CLAMP, reduction="none")
         self.loss_fn = default(loss_fn, def_loss)
         self.atom_tys = atom_tys
 
-    def forward(self, predicted_coords: Tensor, actual_coords: Tensor, coord_mask: Tensor,
-                align: bool = True) -> Tensor:
+    def forward(
+        self, predicted_coords: Tensor, actual_coords: Tensor, coord_mask: Tensor, align: bool = True
+    ) -> Tensor:
         """Compute L_p deviation loss
 
         b: batch dimension
@@ -206,15 +201,15 @@ class CoordDeviationLoss(nn.Module):
         :return: Mean L_p deviation loss.
         """
         if align:
-            predicted, actual = map(lambda x: rearrange(x, "b n a c -> (b a) n c"),
-                                    (predicted_coords, actual_coords))
+            predicted, actual = map(lambda x: rearrange(x, "b n a c -> (b a) n c"), (predicted_coords, actual_coords))
             mask = None
             if exists(coord_mask):
                 mask = rearrange(coord_mask, "b n a  -> (b a) n ")
             predicted, actual = kabsch_align(align_to=predicted, align_from=actual, mask=mask)
             a = predicted_coords.shape[-2]
-            predicted_coords, actual_coords = map(lambda x: rearrange(x, "(b a) n c -> b n a c", a=a),
-                                                  (predicted, actual))
+            predicted_coords, actual_coords = map(
+                lambda x: rearrange(x, "(b a) n c -> b n a c", a=a), (predicted, actual)
+            )
         deviations = self.loss_fn(predicted_coords, actual_coords)
         if exists(coord_mask):
             assert coord_mask.shape == deviations.shape[:3], f"{coord_mask.shape},{deviations.shape}"
@@ -234,8 +229,9 @@ class CoordinateRelDevLoss(nn.Module):
         self.d_cutoff = d_cutoff
         self.loss_fn = get_loss_func(p=1, reduction="none", min_clamp=MIN_COORD_CLAMP, max_clamp=MAX_COORD_CLAMP)
 
-    def forward(self, predicted_coords: Tensor, actual_coords: Tensor, mask: Optional[Tensor] = None,
-                reduce: bool = True) -> Tensor:
+    def forward(
+        self, predicted_coords: Tensor, actual_coords: Tensor, mask: Optional[Tensor] = None, reduce: bool = True
+    ) -> Tensor:
         """
         :param predicted_coords: shape (b,n,a,3)
         :param actual_coords: shape (b,n,a,3)
@@ -243,23 +239,22 @@ class CoordinateRelDevLoss(nn.Module):
         :return: coordinate-wise l1 loss on relative coordinates for each predicted atom (similar to FAPE loss)
         """
         b = predicted_coords.shape[0]
-        pred_rel_coords, actual_rel_coords = map(lambda x: rearrange(x, "b n m c -> (b n) m c"),
-                                                 (to_rel_dev_coords(predicted_coords),
-                                                  to_rel_dev_coords(actual_coords))
-                                                 )
+        pred_rel_coords, actual_rel_coords = map(
+            lambda x: rearrange(x, "b n m c -> (b n) m c"),
+            (to_rel_dev_coords(predicted_coords), to_rel_dev_coords(actual_coords)),
+        )
 
         dist_mask = torch.norm(actual_rel_coords) < self.d_cutoff if exists(self.d_cutoff) else True
         if exists(mask):
             mask = to_rel_dev_coords(mask) & dist_mask
 
-        pred_rel_coords, actual_rel_coords = kabsch_align(pred_rel_coords,
-                                                          actual_rel_coords,
-                                                          apply_translation=False,
-                                                          mask=mask)
+        pred_rel_coords, actual_rel_coords = kabsch_align(
+            pred_rel_coords, actual_rel_coords, apply_translation=False, mask=mask
+        )
 
-        pred_rel_coords, actual_rel_coords = map(lambda x: rearrange(x, "(b n) m c -> b n m c", b=b),
-                                                 (pred_rel_coords, actual_rel_coords)
-                                                 )
+        pred_rel_coords, actual_rel_coords = map(
+            lambda x: rearrange(x, "(b n) m c -> b n m c", b=b), (pred_rel_coords, actual_rel_coords)
+        )
         if exists(mask):
             return torch.mean(self.loss_fn(pred_rel_coords, actual_rel_coords)[mask])
         else:
@@ -270,12 +265,12 @@ class FAPELoss(nn.Module):
     """FAPE Loss"""
 
     def __init__(
-            self,
-            d_clamp: float = 10,
-            eps: float = 1e-8,
-            scale: float = 10,
-            clamp_prob: float = 0.9,
-            intra_res: bool = False,
+        self,
+        d_clamp: float = 10,
+        eps: float = 1e-8,
+        scale: float = 10,
+        clamp_prob: float = 0.9,
+        intra_res: bool = False,
     ):
         """Clamped FAPE loss
 
@@ -292,18 +287,18 @@ class FAPELoss(nn.Module):
         self.clamp = lambda diffs: torch.clamp_max(
             diffs, self._d_clamp if random.uniform(0, 1) < self.clamp_prob else max_value(diffs)
         )
-        self.intra_res=intra_res
+        self.intra_res = intra_res
 
     def forward(
-            self,
-            pred_coords: Tensor,
-            true_coords: Tensor,
-            pred_rigids: Optional[Rigids] = None,
-            true_rigids: Optional[Rigids] = None,
-            coord_mask: Optional[Tensor] = None,
-            reduce: bool = True,
-            clamp_val: Optional[float] = None,
-            mask_fill: float = 0,
+        self,
+        pred_coords: Tensor,
+        true_coords: Tensor,
+        pred_rigids: Optional[Rigids] = None,
+        true_rigids: Optional[Rigids] = None,
+        coord_mask: Optional[Tensor] = None,
+        reduce: bool = True,
+        clamp_val: Optional[float] = None,
+        mask_fill: float = 0,
     ) -> Tensor:
         """Compute FAPE Loss
 
@@ -327,8 +322,7 @@ class FAPELoss(nn.Module):
         pred_rigids = pred_rigids if exists(pred_rigids) else Rigids.RigidFromBackbone(pred_coords)
 
         if not self.intra_res:
-            pred_coords, true_coords = map(lambda x: repeat(x, "b n a c -> b () (n a) c"),
-                                           (pred_coords, true_coords))
+            pred_coords, true_coords = map(lambda x: repeat(x, "b n a c -> b () (n a) c"), (pred_coords, true_coords))
 
         # rotate and translate coordinates into local frame
         true_coords_local = true_rigids.apply_inverse(true_coords).detach()
@@ -336,8 +330,7 @@ class FAPELoss(nn.Module):
 
         # compute deviations of predicted and actual coords.
         unclamped_diffs = safe_norm(pred_coords_local - true_coords_local, dim=-1, eps=self.eps)
-        diffs = torch.clamp_max(unclamped_diffs, clamp_val) if exists(clamp_val) \
-            else self.clamp(unclamped_diffs)
+        diffs = torch.clamp_max(unclamped_diffs, clamp_val) if exists(clamp_val) else self.clamp(unclamped_diffs)
 
         if exists(coord_mask):
             residue_mask = torch.any(coord_mask, dim=-1, keepdim=True)
@@ -351,11 +344,7 @@ class FAPELoss(nn.Module):
         return (1 / self.scale) * (diffs.masked_fill(~coord_mask, mask_fill) if exists(coord_mask) else diffs)
 
     def forward_from_output(
-            self,
-            output: ModelOutput,
-            reduce: bool = True,
-            atom_tys: List[str] = None,
-            mask_fill: float = 0
+        self, output: ModelOutput, reduce: bool = True, atom_tys: List[str] = None, mask_fill: float = 0
     ) -> Tensor:
         """Run forward from ModelOutput Object"""
         pred_rigids = output.pred_rigids
@@ -383,35 +372,33 @@ class DistanceInvLoss(nn.Module):
 
     @staticmethod
     def forward(
-            predicted_coords: Tensor,
-            actal_coords: Tensor,
-            coord_mask: Tensor,
-            reduce: bool = True,
+        predicted_coords: Tensor,
+        actal_coords: Tensor,
+        coord_mask: Tensor,
+        reduce: bool = True,
     ) -> Tensor:
         """Compute Loss"""
         assert predicted_coords.shape == actal_coords.shape
         assert coord_mask.shape == predicted_coords.shape[:3]
         n_res = predicted_coords.shape[1]
         predicted_coords, actal_coords, coord_mask = map(
-            lambda x: rearrange(x, "b n a ... -> b (n a) ..."),
-            (predicted_coords, actal_coords, coord_mask)
+            lambda x: rearrange(x, "b n a ... -> b (n a) ..."), (predicted_coords, actal_coords, coord_mask)
         )
-        pred_dists, native_dists = map(lambda x: torch.cdist(x, x), (predicted_coords, actal_coords,))
-        prox = 1 / (1 + (
-            torch.square((pred_dists - native_dists) / get_tm_scale(n_res)))
-                    )
-        loss = - prox
+        pred_dists, native_dists = map(
+            lambda x: torch.cdist(x, x),
+            (
+                predicted_coords,
+                actal_coords,
+            ),
+        )
+        prox = 1 / (1 + (torch.square((pred_dists - native_dists) / get_tm_scale(n_res))))
+        loss = -prox
         mask = torch.einsum("b i, b j -> b i j", coord_mask, coord_mask)
         if reduce:
             return torch.mean(loss[mask]) if exists(mask) else torch.mean(loss)  # noqa
         return loss.masked_fill(~mask, 0) if exists(mask) else loss  # noqa
 
-    def forward_from_output(
-            self,
-            output: ModelOutput,
-            reduce: bool = True,
-            atom_tys: List[str] = None
-    ) -> Tensor:
+    def forward_from_output(self, output: ModelOutput, reduce: bool = True, atom_tys: List[str] = None) -> Tensor:
         """Run forward from ModelOutput Object"""
         loss_input = output.get_pred_and_native_coords_and_mask(atom_tys=atom_tys, align_by_kabsch=False)
         pred_coords, native_coords, mask = loss_input
@@ -424,7 +411,7 @@ class LDDTProxLoss(nn.Module):
     def __init__(self, weight=1, DMAX=15):
         super(LDDTProxLoss, self).__init__()
         self.activation = nn.Softplus(beta=20)
-        self.abs_func = get_loss_func(p=1, beta=0.25, reduction='none')
+        self.abs_func = get_loss_func(p=1, beta=0.25, reduction="none")
         self.DMAX = DMAX
         self.weight = weight
 

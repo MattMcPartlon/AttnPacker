@@ -6,8 +6,7 @@ from typing import Optional, List, Tuple, Union
 from torch import nn
 
 from protein_learning.networks.common.net_utils import exists, default
-from protein_learning.networks.loss.coord_loss import FAPELoss, DistanceInvLoss, TMLoss, ViolationLoss, CenterOfMassLoss
-from protein_learning.networks.loss.pair_loss import PairDistLossNet, PredictedAlignedErrorLossNet
+from protein_learning.networks.loss.pair_loss import PairDistLossNet
 from protein_learning.networks.loss.residue_loss import SequenceRecoveryLossNet, PredLDDTLossNet
 from protein_learning.networks.loss.side_chain_loss import SideChainDeviationLoss
 
@@ -140,12 +139,6 @@ class LossConfig:
                 loss_fns[name] = loss
                 loss_wts[name] = wt
 
-        _register_loss(FAPELoss(scale=1, clamp_prob=0), LossTy.FAPE, self.fape_wt)
-        _register_loss(
-            FAPELoss(scale=1, clamp_prob=0, intra_res=True),
-            LossTy.RES_FAPE,
-            self.res_fape_wt,
-        )
         _register_loss(SequenceRecoveryLossNet(self.res_dim, hidden_layers=1), LossTy.NSR, self.nsr_wt)
         _register_loss(
             PairDistLossNet(
@@ -160,35 +153,9 @@ class LossConfig:
         )
 
         _register_loss(
-            PredictedAlignedErrorLossNet(
-                dim_in=self.pair_dim,
-                atom_tys=self.pae_atom_tys,
-                d_max=self.pae_max_dist,
-                step=self.pae_step,
-            ),
-            LossTy.PAE,
-            self.pae_wt,
-        )
-
-        _register_loss(
             PredLDDTLossNet(self.res_dim, n_hidden_layers=1, n_bins=self.plddt_bins, atom_ty=self.plddt_atom_tys[0]),
             LossTy.PLDDT,
             self.plddt_wt,
-        )
-        _register_loss(DistanceInvLoss(), LossTy.DIST_INV, self.dist_inv_wt)
-        _register_loss(TMLoss(), LossTy.TM, self.tm_wt)
-
-        _register_loss(CenterOfMassLoss(), LossTy.COM, wt=self.com_wt)
-        _register_loss(
-            ViolationLoss(
-                bond_len_wt=self.bond_len_wt,
-                bond_angle_wt=self.bond_angle_wt,
-                vdw_wt=self.vdw_wt,
-                vdw_mean=True,
-                vdw_tol=0.25,
-            ),
-            LossTy.VIOL,
-            self.violation_wt,
         )
 
         _register_loss(SideChainDeviationLoss(p=self.sc_rmsd_p), LossTy.SC_RMSD, self.sc_rmsd_wt)

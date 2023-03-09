@@ -34,12 +34,12 @@ def get_args_n_groups(parser, arg_list=None):  # -> Tuple[Namespace, Dict[str, N
 
 
 def load_args_for_eval(
-        global_config_path: str,
-        model_config_path: str,
-        model_override: Dict,
-        global_override: Dict,
-        default_model_args: Namespace,
-        default_model_arg_groups: Dict,
+    global_config_path: str,
+    model_config_path: str,
+    model_override: Dict,
+    global_override: Dict,
+    default_model_args: Namespace,
+    default_model_arg_groups: Dict,
 ):
     global_config = load_config(
         curr_config=None,
@@ -55,7 +55,8 @@ def load_args_for_eval(
         group_dict = vars(default_model_arg_groups[group_name])
         for key in group_dict:
             if key not in curr_arg_dict:
-                print(f"[WARNING] : no value for key {key}, arg_group : {group_name}")
+                if key != "help":
+                    print(f"[WARNING] : no value for key {key}, arg_group : {group_name}")
                 continue
             group_dict[key] = curr_arg_dict[key]
         loaded_arg_groups[group_name] = group_dict
@@ -72,44 +73,45 @@ def load_args_for_eval(
 
 def override_config_from_path(path, override):
     load_kwargs = load_npy(path)
-    load_kwargs['load_state'] = True
+    load_kwargs["load_state"] = True
     # assert load_kwargs['config_path'] != path, path
-    load_kwargs['config_path'] = path
+    load_kwargs["config_path"] = path
     load_kwargs.update(override)
     return GlobalConfig(**load_kwargs)
 
 
 def load_n_save_args(
-        args,
-        arg_groups,
-        defaults: Optional[Namespace] = None,
-        suffix="model",
-        global_override: Dict = None,
-        model_override: Dict = None,
-        model_config_path: Optional[str] = None,
-        save: bool = True,
-        force_load: bool = False,
+    args,
+    arg_groups,
+    defaults: Optional[Namespace] = None,
+    suffix="model",
+    global_override: Dict = None,
+    model_override: Dict = None,
+    model_config_path: Optional[str] = None,
+    save: bool = True,
+    force_load: bool = False,
 ):
     """Load and save model arguments"""
     # Set up model args
     if exists(model_config_path) or getattr(args, "force_override", False):
-
-        pth = default(model_config_path, getattr(args, 'global_config_override_path', None))
+        pth = default(model_config_path, getattr(args, "global_config_override_path", None))
         print(f"[INFO] loading and overriding global config!")
         print(f"\tmodel config path (given) : {model_config_path}")
         print(f"\tmodel config path (used) {pth}")
-        config = override_config_from_path(
-            path=pth,
-            override=default(global_override, dict())
-        )
+        config = override_config_from_path(path=pth, override=default(global_override, dict()))
     else:
         config = make_config(args.model_config)
     if config.load_state or force_load:
         global_override = default(global_override, dict())
         model_override = default(model_override, dict())
         config, args, arg_groups = load_args(
-            config, args, arg_groups, defaults=defaults, override=global_override,
-            model_override=model_override, suffix=suffix
+            config,
+            args,
+            arg_groups,
+            defaults=defaults,
+            override=global_override,
+            model_override=model_override,
+            suffix=suffix,
         )
     if save:
         save_args(config, args, suffix=suffix)
@@ -117,13 +119,13 @@ def load_n_save_args(
 
 
 def load_args(
-        curr_config: GlobalConfig,
-        curr_model_args: Namespace,
-        arg_groups: Optional[Dict[str, Namespace]] = None,
-        defaults: Optional[Namespace] = None,
-        suffix: str = "model_args",
-        override: Optional[Dict[str, Any]] = None,
-        model_override: Optional[Dict[str, Any]] = None,
+    curr_config: GlobalConfig,
+    curr_model_args: Namespace,
+    arg_groups: Optional[Dict[str, Namespace]] = None,
+    defaults: Optional[Namespace] = None,
+    suffix: str = "model_args",
+    override: Optional[Dict[str, Any]] = None,
+    model_override: Optional[Dict[str, Any]] = None,
 ) -> Union[Tuple[GlobalConfig, Namespace], Tuple[GlobalConfig, Namespace, Dict[str, Namespace]]]:
     """Load model arguments from paths"""
     config = load_config(curr_config, **default(override, {}))
@@ -166,9 +168,7 @@ def save_args(config: GlobalConfig, args: Namespace, suffix: str = "model_args")
 
 
 def print_args(
-        config: Optional[GlobalConfig],
-        args: Optional[Namespace],
-        arg_groups: Optional[Dict[str, Namespace]] = None
+    config: Optional[GlobalConfig], args: Optional[Namespace], arg_groups: Optional[Dict[str, Namespace]] = None
 ):
     """Print model args"""
     if exists(config):

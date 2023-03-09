@@ -1,12 +1,20 @@
-# AttnPacker 
-
-Pre-trained models, and PDB files used to generate all results are available at  https://zenodo.org/record/7559358#.Y83tYuzMI0Q
-
-TODO: Examples and Inference
+# Source Code for AttnPacker 
 
 This repo contains code for AttnPacker
 
+Pre-trained models, and PDB files used to generate all results are available at  https://zenodo.org/record/7559358#.Y83tYuzMI0Q
+
+# Install
+```
+$ git clone git@github.com:MattMcPartlon/AttnPacker.git
+$ conda create --name <env_name> --file requirements.txt
+
+```
+
 # Examples
+
+Inference with AttnPacker is outlined in `protein_learning/examples/inference.ipynb`. This includes examples for sequence design, side-chain post processing 
+per-residue confidence prediction and more. Additional examples are outlined below.
 
 ## Run Post-Process Procedure on a PDB File
 ```

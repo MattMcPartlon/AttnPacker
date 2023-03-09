@@ -15,16 +15,10 @@ from protein_learning.common.global_constants import get_logger
 from protein_learning.common.helpers import exists, default
 from protein_learning.features.feature_config import FeatureName
 from protein_learning.features.feature_config import InputFeatureConfig
-from protein_learning.features.feature_generator import (
-    FeatureGenerator, get_input_features
-)
+from protein_learning.features.feature_generator import FeatureGenerator, get_input_features
 from protein_learning.features.input_features import InputFeatures
-from protein_learning.features.masking.inter_chain import (
-    InterChainMaskGenerator
-)
-from protein_learning.features.masking.intra_chain import (
-    IntraChainMaskGenerator
-)
+from protein_learning.features.masking.inter_chain import InterChainMaskGenerator
+from protein_learning.features.masking.intra_chain import IntraChainMaskGenerator
 from protein_learning.features.masking.masking_utils import (
     chain_mask_to_full_mask,
     mask_inter_chain_pair_features,

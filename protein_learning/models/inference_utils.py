@@ -103,6 +103,42 @@ def make_predicted_protein(model_out, seq: Optional[Union[str, Tensor]] = None) 
     return pred_protein
 
 
+def post_process_prediction(model, model_in, model_out, device="cpu"):
+    # masked residue positions
+    seq_mask = default(model_in.input_features.seq_mask, torch.zeros(len(model_in.decoy)).bool())
+
+    # coords, pLDDT, and Sequence
+    res_feats = model_out.scalar_output
+    pred_coords = model_out.predicted_coords
+    pred_seq_labels = model_out.decoy_protein.seq_encoding
+    pred_seq_logits = None
+
+    # Predicted pLDDT
+    plddt_head = model.loss_fn.loss_fns["plddt"]
+    pred_plddt = plddt_head.get_expected_value(res_feats)
+    pred_plddt = pred_plddt
+
+    # Predicted Sequence
+    if "nsr" in model.loss_fn and torch.any(seq_mask):
+        pred_seq_logits = model.loss_fn.loss_fns["nsr"].get_predicted_logits(res_feats)
+        pred_seq_labels = torch.argmax(pred_seq_logits, dim=-1)
+
+    out = dict(
+        pred_coords=pred_coords,
+        pred_seq_labels=pred_seq_labels,
+        pred_seq_logits=pred_seq_logits,
+        pred_plddt=pred_plddt,
+        res_output=res_feats,
+        pair_output=model_out.pair_output,
+        design_mask=seq_mask,
+        model_out=model_out.detach(),
+        model_in=model_in,
+        seq="".join([pc.INDEX_TO_AA_ONE[x.item()] for x in pred_seq_labels.squeeze()]),
+    )
+    fn = lambda x: x.detach().to(device).squeeze() if torch.is_tensor(x) else x
+    return {k: fn(v) for k, v in out.items()}
+
+
 INFERENCE_ARGS = """
 # whether todesign sequence
 --mask_seq
@@ -122,9 +158,13 @@ class Inference:
     def __init__(
         self,
         model_n_config_root: str,
-        model_name: str,
+        use_design_variant: bool = False,
     ):
-        self.model_name = model_name
+        self.model = None
+        if use_design_variant:
+            self.model_name = "fbb_design_21_12_2022_16:07:51"
+        else:
+            self.model_name = "fbb_design_21_12_2022_15:57:43"
         self.trainer = SCPTrain()
         self.resource_root = model_n_config_root
         self.load_inference_args()
@@ -171,6 +211,10 @@ class Inference:
         return config, args, arg_groups
 
     def _init_model(self):
+        """Should only be called once - sort of like a lazy property"""
+        print("[INFO] Initializing AttnPacker Model")
+        if exists(self.model):
+            return self.model
         # set up feature generator
         feature_config = sc.get_input_feature_config(
             self.arg_groups,
@@ -183,9 +227,6 @@ class Inference:
         self.feat_gen = feat_gen  # noqa
         self.input_embedding = InputEmbedding(feature_config)
         self.model = self.trainer.get_model(self.input_embedding)
-
-    def get_model(self):
-        self._init_model()
         model_path = os.path.join(self.resource_root, "models", f"{self.model_name}.tar")
         checkpoint = torch.load(model_path, map_location="cpu")
         try:
@@ -193,11 +234,14 @@ class Inference:
         except:  # noqa
             # print(traceback.format_exc())
             self.model.load_state_dict(checkpoint["model"], strict=False)
-
+        self.model = self.model.eval()
         self.model.basis_dir = NAME_TO_BASIS_CACHE[self.model_name]
+
+    def get_model(self, device="cpu"):
+        self._init_model()
         return self.model
 
-    def load_example(self, pdb_path, fasta_path=None):
+    def load_example(self, pdb_path, fasta_path=None, design_mask=None):
         protein = Protein.FromPDBAndSeq(
             pdb_path=pdb_path,
             seq=fasta_path,
@@ -215,7 +259,24 @@ class Inference:
             input_features=self.feat_gen.generate_features(
                 protein,
                 extra=extra,
-                # seq_mask=seq_mask,
+                seq_mask=design_mask,
             ),
             extra=extra,
-        )
+        ).to(self.device)
+
+    def to(self, device):
+        self.model = self.get_model().to(device)
+        return self
+
+    @property
+    def device(self):
+        return next(self.model.parameters()).device
+
+    def infer(self, pdb_path, fasta_path=None, design_mask=None, post_process=True):
+        model = self.get_model()
+        with torch.no_grad():
+            model_input = self.load_example(pdb_path, fasta_path, design_mask)
+            model_output = model(model_input, use_cycles=1)
+            if post_process:
+                return post_process_prediction(model, model_input, model_output)
+            return model_output
