@@ -2,7 +2,7 @@
 
 This repo contains code for AttnPacker
 
-Pre-trained models, and PDB files used to generate all results are available at  https://zenodo.org/record/7559358#.Y83tYuzMI0Q
+Pre-trained models, and PDB files used to generate all results are available at https://zenodo.org/record/7713779#.ZApZHezMIVU
 
 # Install
 
