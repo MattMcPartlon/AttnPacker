@@ -2,9 +2,9 @@
 import os
 
 os.environ["CUDA_DEVICE_ORDER"] = "PCI_BUS_ID"
-os.environ['OPENBLAS_NUM_THREADS'] = '4'
-os.environ['MKL_NUM_THREADS'] = '4'
-os.environ['OMP_NUM_THREADS'] = '4'
+os.environ["OPENBLAS_NUM_THREADS"] = "4"
+os.environ["MKL_NUM_THREADS"] = "4"
+os.environ["OMP_NUM_THREADS"] = "4"
 from abc import abstractmethod
 from functools import partial
 from typing import List
@@ -17,14 +17,17 @@ from protein_learning.features.masking.partition import (
 from protein_learning.models.masked_design.masked_design_utils import FeatureFlagGen
 from protein_learning.models.model_abc.train import TrainABC
 from protein_learning.models.utils.dataset_augment_fns import impute_cb, partition_chain
-from protein_learning.models.utils.opt_parse import add_esm_options, add_flag_args
+
+# from protein_learning.models.utils.esm_embedder import ESMInputEmbedder
+# from protein_learning.models.utils.esm_input import ESMFeatGen
+from protein_learning.models.utils.opt_parse import add_flag_args, add_esm_options
 
 
 class TrainDesign(TrainABC):
     """Train Masked Design Model"""
 
-    def __init__(self):
-        super(TrainDesign, self).__init__()
+    def __init__(self, skip_init=False):
+        super(TrainDesign, self).__init__(skip_init=skip_init)
 
     @abstractmethod
     def _add_extra_cmd_line_options(self, parser):
@@ -93,7 +96,7 @@ class TrainDesign(TrainABC):
         flag_args.add_argument("--num_interface", type=float, default=None)
         flag_args.add_argument("--num_contact", type=float, default=None)
         flag_args.add_argument("--random_interface", type=int, default=None)
-        flag_args.add_argument("--random_contact",type=int, default=None)
+        flag_args.add_argument("--random_contact", type=int, default=None)
         self._add_extra_cmd_line_options_for_eval(parser)
         return parser
 
@@ -126,24 +129,36 @@ class TrainDesign(TrainABC):
         return self.flag_gen.flag_dims[1] if self.flag_gen is not None else 0
 
     def _setup(self):
-        self.flag_gen = FeatureFlagGen(
-            **vars(self.arg_groups["flag_args"])
-        ) if self.use_flags else None
+        self.flag_gen = FeatureFlagGen(**vars(self.arg_groups["flag_args"])) if self.use_flags else None
         self.partition_gen = None
         if self.args.partition_chains:
             self.partition_gen = ChainPartitionGenerator(
                 strat_n_weight_kwargs=vars(self.arg_groups["chain_partition_args"])
             )
         self.esm_embedder = None
-        
+        if self.args.use_esm_1b or self.args.use_esm_msa:
+            esm_feat_gen = ESMFeatGen(
+                use_esm_msa=self.args.use_esm_msa,
+                use_esm_1b=self.args.use_esm_1b,
+                esm_gpu_idx=self.args.esm_gpu_idx,
+                msa_dir=self.args.esm_msa_dir,
+                max_msa_seqs=self.args.max_msa_seqs,
+            )
+            self.esm_embedder = ESMInputEmbedder(
+                use_esm_1b=self.args.use_esm_1b,
+                use_esm_msa=self.args.use_esm_msa,
+                node_dim_in=self.args.node_dim_hidden,
+                pair_dim_in=self.args.pair_dim_hidden,
+                node_dim_out=self.args.node_dim_hidden,
+                pair_dim_out=self.args.pair_dim_hidden,
+                feat_gen=esm_feat_gen,
+            )
 
     @property
     def dataset_transform_fn(self):
         """Transform native and decoy input"""
         return partial(
-            _transform,
-            partition_gen=self.partition_gen,
-            train_on_bounded=self.args.train_on_bounded_complex
+            _transform, partition_gen=self.partition_gen, train_on_bounded=self.args.train_on_bounded_complex
         )
 
     @property

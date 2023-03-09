@@ -13,8 +13,7 @@ from functools import partial
 import numpy as np
 import torch
 from protein_learning.features.input_embedding import InputEmbedding
-from protein_learning.models.masked_design.design_train import TrainDesign
-from protein_learning.models.masked_design.masked_design_utils import augment
+from protein_learning.models.fbb_design.train_utils import TrainDesign
 from protein_learning.networks.geometric_gt.geom_gt_config import add_gt_options, get_configs as get_gt_configs
 from protein_learning.networks.loss.loss_fn import LossConfig, DefaultLossFunc
 from protein_learning.features.default_feature_generator import DefaultFeatureGenerator

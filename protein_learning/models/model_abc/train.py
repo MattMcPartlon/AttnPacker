@@ -5,9 +5,9 @@ import os
 from typing import Union, Optional, Callable, Tuple, List
 
 os.environ["CUDA_DEVICE_ORDER"] = "PCI_BUS_ID"
-os.environ['OPENBLAS_NUM_THREADS'] = '4'
-os.environ['MKL_NUM_THREADS'] = '4'
-os.environ['OMP_NUM_THREADS'] = '4'
+os.environ["OPENBLAS_NUM_THREADS"] = "4"
+os.environ["MKL_NUM_THREADS"] = "4"
+os.environ["OMP_NUM_THREADS"] = "4"
 import sys
 from abc import abstractmethod
 import gc
@@ -16,7 +16,8 @@ from protein_learning.features.input_embedding import InputEmbedding
 from argparse import ArgumentParser, ArgumentDefaultsHelpFormatter
 from protein_learning.features.feature_config import InputFeatureConfig
 from protein_learning.features.feature_generator import FeatureGenerator
-from protein_learning.training.trainer import Trainer
+
+# from protein_learning.training.trainer import Trainer
 from protein_learning.common.global_constants import get_logger, _set_jit_fusion_options  # noqa
 from protein_learning.models.utils.model_io import (
     load_n_save_args,
@@ -39,15 +40,23 @@ from protein_learning.common.data.datasets.protein_dataset import ProteinDataset
 from protein_learning.common.global_config import GlobalConfig
 from protein_learning.common.helpers import exists, default
 from protein_learning.models.model_abc.protein_model import ProteinModel
-from protein_learning.assessment.model_eval.model_evaluator import ModelEvaluator, StatsConfig
-#from protein_learning.assessment.model_eval.genetic_alg.ga_evaluator import GAEvaluator
-#from protein_learning.assessment.model_eval.genetic_alg.utils import add_ga_args
+
+# from protein_learning.assessment.model_eval.model_evaluator import ModelEvaluator, StatsConfig
+
+# from protein_learning.assessment.model_eval.genetic_alg.ga_evaluator import GAEvaluator
+# from protein_learning.assessment.model_eval.genetic_alg.utils import add_ga_args
 import numpy as np
 
 # _set_jit_fusion_options()
 torch.set_printoptions(precision=3)
 logger = get_logger(__name__)
 DEFAULT_ATOM_TYS = "N CA C CB".split()
+
+
+class Trainer:
+    def __init__(*args, **kwargs):
+        pass
+        # trainer class removed, only inference supported
 
 
 def info(msg):  # noqa
@@ -62,65 +71,86 @@ def __setup__():  # noqa
 
 
 def get_datasets(
-        dataset,
-        global_config: GlobalConfig,
-        augment_fn: Union[Optional[Callable], List[Optional[Callable]]],
-        feature_gen: Union[FeatureGenerator, List[FeatureGenerator]],
-        **kwargs
+    dataset,
+    global_config: GlobalConfig,
+    augment_fn: Union[Optional[Callable], List[Optional[Callable]]],
+    feature_gen: Union[FeatureGenerator, List[FeatureGenerator]],
+    **kwargs,
 ) -> Tuple[ProteinDataset, Optional[ProteinDataset], Optional[ProteinDataset]]:
     """Load train/valid/test datasets"""
     c = global_config
     feature_gens = feature_gen if isinstance(feature_gen, list) else [feature_gen] * 3
     augment_fns = augment_fn if isinstance(augment_fn, list) else [augment_fn] * 3
-    _dataset = lambda lst, nat, decoy, seq, gen, samples, aug_fn: dataset(
-        model_list=lst,
-        native_folder=nat,
-        decoy_folder=decoy,
-        seq_folder=seq,
-        raise_exceptions=c.raise_exceptions,
-        feat_gen=gen,
-        augment_fn=aug_fn,
-        crop_len=c.max_len,
-        **kwargs,
-    ) if exists(lst) else None
+    _dataset = (
+        lambda lst, nat, decoy, seq, gen, samples, aug_fn: dataset(
+            model_list=lst,
+            native_folder=nat,
+            decoy_folder=decoy,
+            seq_folder=seq,
+            raise_exceptions=c.raise_exceptions,
+            feat_gen=gen,
+            augment_fn=aug_fn,
+            crop_len=c.max_len,
+            **kwargs,
+        )
+        if exists(lst)
+        else None
+    )
 
-    train_data = _dataset(c.train_list, c.train_native_folder,
-                          c.train_decoy_folder, c.train_seq_folder, feature_gens[0], -1, augment_fns[0])
-    valid_data = _dataset(c.val_list, c.val_native_folder, c.val_decoy_folder,
-                          c.val_seq_folder, feature_gens[1], c.max_val_samples, augment_fns[1])
-    test_data = _dataset(c.test_list, c.test_native_folder, c.test_decoy_folder,
-                         c.test_seq_folder, feature_gens[2], c.max_test_samples, augment_fns[2])
+    train_data = _dataset(
+        c.train_list,
+        c.train_native_folder,
+        c.train_decoy_folder,
+        c.train_seq_folder,
+        feature_gens[0],
+        -1,
+        augment_fns[0],
+    )
+    valid_data = _dataset(
+        c.val_list,
+        c.val_native_folder,
+        c.val_decoy_folder,
+        c.val_seq_folder,
+        feature_gens[1],
+        c.max_val_samples,
+        augment_fns[1],
+    )
+    test_data = _dataset(
+        c.test_list,
+        c.test_native_folder,
+        c.test_decoy_folder,
+        c.test_seq_folder,
+        feature_gens[2],
+        c.max_test_samples,
+        augment_fns[2],
+    )
 
     return train_data, valid_data, test_data
 
 
-def get_feature_gen(
-        arg_groups,
-        feature_config,
-        apply_masks
-) -> DefaultFeatureGenerator:
+def get_feature_gen(arg_groups, feature_config, apply_masks) -> DefaultFeatureGenerator:
     """Get Masked Feature Generator"""
     return DefaultFeatureGenerator(
         config=feature_config,
-        intra_chain_mask_kwargs=vars(arg_groups['intra_chain_mask_args']),
-        inter_chain_mask_kwargs=vars(arg_groups['inter_chain_mask_args']),
+        intra_chain_mask_kwargs=vars(arg_groups["intra_chain_mask_args"]),
+        inter_chain_mask_kwargs=vars(arg_groups["inter_chain_mask_args"]),
         **vars(arg_groups["feat_gen_args"]),
         apply_masks=apply_masks,
     )
 
 
 def get_input_feature_config(
-        arg_groups,
-        pad_embeddings: bool = False,
-        extra_pair_feat_dim: int = 0,
-        extra_res_feat_dim: int = 0,
+    arg_groups,
+    pad_embeddings: bool = False,
+    extra_pair_feat_dim: int = 0,
+    extra_res_feat_dim: int = 0,
 ) -> InputFeatureConfig:
     """Get input feature configuration"""
     return InputFeatureConfig(
         extra_residue_dim=extra_res_feat_dim,
         extra_pair_dim=extra_pair_feat_dim,
         pad_embeddings=pad_embeddings,
-        **vars(arg_groups['feature_args'])
+        **vars(arg_groups["feature_args"]),
     )
 
 
@@ -137,14 +167,15 @@ def add_feat_gen_groups(parser):
 
 def get_default_parser():
     """Get arguments for protein learning model"""
-    parser = ArgumentParser(description="Train options for Protein Learning Model",  # noqa
-                            epilog='',
-                            formatter_class=ArgumentDefaultsHelpFormatter)
+    parser = ArgumentParser(
+        description="Train options for Protein Learning Model",  # noqa
+        epilog="",
+        formatter_class=ArgumentDefaultsHelpFormatter,
+    )
     # Complex-Design-Specific arguments
-    parser.add_argument('model_config',
-                        help="path to global config args")
-    parser.add_argument('--node_dim_hidden', type=int, default=128)
-    parser.add_argument('--pair_dim_hidden', type=int, default=128)
+    parser.add_argument("model_config", help="path to global config args")
+    parser.add_argument("--node_dim_hidden", type=int, default=128)
+    parser.add_argument("--pair_dim_hidden", type=int, default=128)
     parser, feature_group = add_feature_options(parser)  # feature_args
     # add (default) loss options for each loss type
     parser, loss_group = add_default_loss_options(parser)  # loss_args
@@ -153,9 +184,7 @@ def get_default_parser():
 
 def get_default_parser_for_eval():
     """Get arguments for complex design"""
-    parser = ArgumentParser(description="",  # noqa
-                            epilog='',
-                            formatter_class=ArgumentDefaultsHelpFormatter)
+    parser = ArgumentParser(description="", epilog="", formatter_class=ArgumentDefaultsHelpFormatter)  # noqa
 
     # Complex-Design-Specific arguments
     parser.add_argument("--raise_exceptions", action="store_true")
@@ -163,8 +192,7 @@ def get_default_parser_for_eval():
     parser.add_argument("--global_config_path", type=str)
     parser.add_argument("--stats_dir", help="directory to store model stats in", default=None)
     parser.add_argument("--pdb_dir", help="directory to store pdbs in (optional)", default=None)
-    parser.add_argument('--gpu_indices', help="gpu index to run on",
-                        type=str, nargs='+', default=["0"])
+    parser.add_argument("--gpu_indices", help="gpu index to run on", type=str, nargs="+", default=["0"])
     parser.add_argument("--eval_decoy_folder")
     parser.add_argument("--eval_native_folder")
     parser.add_argument("--eval_target_list")
@@ -173,8 +201,8 @@ def get_default_parser_for_eval():
     parser.add_argument("--n_replicas", type=int, default=1)
     parser.add_argument("--model_path", type=str, default=None)
     parser.add_argument("--max_len", type=int, default=500)
-    #parser.add_argument("--do_ga", action="store_true")
-    #add_ga_args(parser)
+    # parser.add_argument("--do_ga", action="store_true")
+    # add_ga_args(parser)
     parser, _ = add_stats_options(parser)
     add_feat_gen_groups(parser)
     return parser
@@ -188,15 +216,15 @@ def default_global_override_for_eval(args):
         train_seq_folder=args.eval_seq_folder,
         raise_exceptions=args.raise_exceptions,
         gpu_indices=args.gpu_indices,
-        max_len=args.max_len
+        max_len=args.max_len,
     )
 
 
 class TrainABC:
     """Train a model"""
 
-    def __init__(self, skip_init = False):
-        self.do_eval=True
+    def __init__(self, skip_init=False):
+        self.do_eval = True
         """
         self.do_eval=True
         eval_parser = get_default_parser_for_eval()
@@ -346,16 +374,10 @@ class TrainABC:
         )
         self.feature_config = feature_config  # noqa
 
-        feat_gen = get_feature_gen(
-            arg_groups,
-            feature_config,
-            apply_masks=self.apply_masks
-        )
+        feat_gen = get_feature_gen(arg_groups, feature_config, apply_masks=self.apply_masks)
         self.feat_gen = feat_gen  # noqa
         fgs = [feat_gen] * 3
-        val_feat_gen = self.get_val_feat_gen(arg_groups,
-                                             feature_config,
-                                             apply_masks=self.apply_masks)
+        val_feat_gen = self.get_val_feat_gen(arg_groups, feature_config, apply_masks=self.apply_masks)
         if exists(val_feat_gen):
             fgs = [feat_gen, val_feat_gen, val_feat_gen]
 
@@ -407,44 +429,7 @@ class TrainABC:
 
     def eval(self):
         """Evaluate the model"""
-        pdb_dir = None
-        if exists(self.eval_args.pdb_dir):
-            pdb_dir = os.path.join(self.eval_args.pdb_dir, self.config.name)
-            os.makedirs(pdb_dir, exist_ok=True)
-        info("saving pdbs to")
-        stats_path = os.path.join(self.eval_args.stats_dir, self.config.name)
-        stats_path = stats_path
-        info(f"saving stats to {stats_path}_stats.npy")
-        info(f"saving config to {stats_path}_config.npy")
-        os.makedirs(os.path.dirname(stats_path), exist_ok=True)
-        trainer = self.get_trainer()
-
-        model_eval_kwargs = dict(
-            stats_config=StatsConfig(**vars(self.eval_groups["stats_args"])),
-            global_config=self.config,
-            model=trainer.model.eval(),
-            pdb_dir=pdb_dir,
-            dataset=trainer.datasets["training"],
-            max_samples=self.eval_args.max_samples,
-            use_custom_forward=False,
-            model_path=self.eval_args.model_path,
-            raise_exceptions=self.eval_args.raise_exceptions,
-            **self.eval_kwargs,
-        )
-        if not self.eval_args.do_ga:
-            model_eval = ModelEvaluator(
-                **model_eval_kwargs
-            )
-        else:
-            model_eval = GAEvaluator(
-                model_eval_kwargs,
-                vars(self.eval_groups["ga_args"]),
-            )
-
-        model_eval.evaluate(n_replicas=self.eval_args.n_replicas)
-        np.save(f"{stats_path}_stats.npy", model_eval.stats_data)
-        np.save(f"{stats_path}_config.npy", vars(self.eval_args))
-        info("Finished!")
+        raise Exception("removed, only inference supported")
 
     def run(self, detect_anomoly=False):
         """Run train or eval"""
