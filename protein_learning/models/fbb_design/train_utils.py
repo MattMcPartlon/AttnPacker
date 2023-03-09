@@ -14,7 +14,7 @@ from protein_learning.features.input_embedding import InputEmbedding
 from protein_learning.features.masking.partition import (
     ChainPartitionGenerator,
 )
-from protein_learning.models.masked_design.masked_design_utils import FeatureFlagGen
+from protein_learning.models.utils.feature_flags import FeatureFlagGen
 from protein_learning.models.model_abc.train import TrainABC
 from protein_learning.models.utils.dataset_augment_fns import impute_cb, partition_chain
 
