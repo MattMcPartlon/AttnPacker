@@ -23,11 +23,8 @@ from protein_learning.features.input_features import PI
 from protein_learning.protein_utils.dihedral.orientation_utils import get_bb_dihedral, get_tr_rosetta_orientation_mats
 from protein_learning.protein_utils.sidechains.sidechain_rigid_utils import atom37_to_torsion_angles
 
-def string_encode(
-        mapping: Dict[str, int],
-        *x,
-        device: Any = "cpu"
-) -> Tensor:
+
+def string_encode(mapping: Dict[str, int], *x, device: Any = "cpu") -> Tensor:
     """Encodes a string (or list of strings) according to the given mapping
     :param x: string(s) to encode
     :param mapping: map from string to integer defining encoding
@@ -64,9 +61,10 @@ def bin_encode(data: Tensor, bins: Tensor):
         [(bins[i],bins[i+1])] is used to define each position.
     :return: bin index of each value in input data
     """
-    assert torch.min(data) >= bins[0] and torch.max(data) < bins[-1], \
-        f"incorrect bins, got min/max of data: ({torch.min(data)},{torch.max(data)})\n" \
+    assert torch.min(data) >= bins[0] and torch.max(data) < bins[-1], (
+        f"incorrect bins, got min/max of data: ({torch.min(data)},{torch.max(data)})\n"
         f"but bin min/max = ({bins[0]},{bins[-1]}])"
+    )
     binned_data = -torch.ones_like(data)
     for i, (low, high) in enumerate(zip(bins[:-1], bins[1:])):
         mask = torch.logical_and(data >= low, data < high)  # noqa
@@ -75,8 +73,8 @@ def bin_encode(data: Tensor, bins: Tensor):
 
 
 def res_ty_encoding(
-        seq: str,
-        corrupt_prob: float = 0,
+    seq: str,
+    corrupt_prob: float = 0,
 ) -> Feature:
     """Encodes sequence either as a Tensor of ints.
     :param seq: sequence to encode
@@ -95,13 +93,12 @@ def res_ty_encoding(
         name=FeatureName.RES_TY.value,
         dtype=torch.long,
         ty=FeatureTy.RESIDUE,
-        n_classes=len(AA_INDEX_MAP)
+        n_classes=len(AA_INDEX_MAP),
     )
 
 
 def rel_pos_encoding(res_ids: Union[Tensor, List[Tensor]], n_classes: int = 10) -> Feature:
-    """Encodes each residue position based on the relative position in the sequence.
-    """
+    """Encodes each residue position based on the relative position in the sequence."""
     res_ids = [res_ids] if torch.is_tensor(res_ids) else res_ids
     assert all([torch.all(res_ids[i] >= 0) for i in range(len(res_ids))]), f"{res_ids}"  # noqa
     encs = []
@@ -116,18 +113,17 @@ def rel_pos_encoding(res_ids: Union[Tensor, List[Tensor]], n_classes: int = 10) 
         name=FeatureName.REL_POS.value,
         dtype=torch.long,
         ty=FeatureTy.RESIDUE,
-        n_classes=n_classes
+        n_classes=n_classes,
     )
 
 
 def bb_dihedral_encoding(
-        bb_coords: Optional[List[Tensor]] = None,
-        n_classes: int = 36,
-        encode: bool = True,
-        bb_dihedrals: Optional[Tuple[Tensor, ...]] = None
+    bb_coords: Optional[List[Tensor]] = None,
+    n_classes: int = 36,
+    encode: bool = True,
+    bb_dihedrals: Optional[Tuple[Tensor, ...]] = None,
 ) -> Feature:
-    """BB DIhedral Features (encoded or raw)
-    """
+    """BB DIhedral Features (encoded or raw)"""
     assert exists(bb_dihedrals) or exists(bb_coords)
     phi, psi, omega = bb_dihedrals if exists(bb_dihedrals) else get_bb_dihedral(*bb_coords)
     bb_dihedrals = torch.cat([x.unsqueeze(-1) for x in (phi, psi, omega)], dim=-1)
@@ -140,19 +136,18 @@ def bb_dihedral_encoding(
         name=FeatureName.BB_DIHEDRAL.value,
         dtype=torch.long,
         ty=FeatureTy.RESIDUE,
-        n_classes=n_classes
+        n_classes=n_classes,
     )
 
 
 def degree_centrality_encoding(
-        coords: Tensor,
-        chain_indices: List[Tensor],
-        n_classes: int = 6,
-        max_radius: float = 12,
-        bounds: Tuple[int, int] = (6, 30),
+    coords: Tensor,
+    chain_indices: List[Tensor],
+    n_classes: int = 6,
+    max_radius: float = 12,
+    bounds: Tuple[int, int] = (6, 30),
 ) -> Feature:
-    """Residue degree centrality features
-    """
+    """Residue degree centrality features"""
     assert coords.ndim == 2
     cens, normed_cens = torch.zeros(coords.shape[0]), torch.zeros(coords.shape[0])
     for idxs in chain_indices:
@@ -173,17 +168,15 @@ def degree_centrality_encoding(
         name=FeatureName.CENTRALITY.value,
         dtype=torch.long,
         ty=FeatureTy.RESIDUE,
-        n_classes=n_classes
+        n_classes=n_classes,
     )
 
 
 def rel_sep_encoding(res_ids: Union[Tensor, List[Tensor]], sep_bins: List) -> Feature:
-    """Relative Separation Encoding
-    """
+    """Relative Separation Encoding"""
     res_ids = [res_ids] if torch.is_tensor(res_ids) else res_ids
     res_posns = torch.cat(res_ids, dim=-1)
-    sep_mat = rearrange(res_posns, "n -> () n ()") - \
-              rearrange(res_posns, "n -> n () ()")  # noqa
+    sep_mat = rearrange(res_posns, "n -> () n ()") - rearrange(res_posns, "n -> n () ()")  # noqa
     enc_sep_mat = bin_encode(sep_mat, bins=torch.tensor(sep_bins))
     assert torch.all(enc_sep_mat >= 0)
     return Feature(
@@ -192,17 +185,16 @@ def rel_sep_encoding(res_ids: Union[Tensor, List[Tensor]], sep_bins: List) -> Fe
         name=FeatureName.REL_SEP.value,
         dtype=torch.long,
         ty=FeatureTy.PAIR,
-        n_classes=len(sep_bins)
+        n_classes=len(sep_bins),
     )
 
 
 def rel_dist_encoding(
-        rel_dists: Tensor,
-        dist_bounds=(2.5, 16.5),
-        n_classes=32,
+    rel_dists: Tensor,
+    dist_bounds=(2.5, 16.5),
+    n_classes=32,
 ) -> Feature:
-    """Relative Distance Encoding
-    """
+    """Relative Distance Encoding"""
     min_dist, max_dist = dist_bounds
     normed_dists = (rel_dists - min_dist) / (max_dist - min_dist)
     dist_bins = torch.clamp(normed_dists, 0, 1) * (n_classes - 1)
@@ -217,15 +209,13 @@ def rel_dist_encoding(
 
 
 def tr_rosetta_ori_encoding(
-        bb_coords: List[Tensor] = None,
-        n_classes: int = 36,
-        encode: bool = True,
-        tr_angles: Optional[Tuple[Tensor, ...]] = None,
+    bb_coords: List[Tensor] = None,
+    n_classes: int = 36,
+    encode: bool = True,
+    tr_angles: Optional[Tuple[Tensor, ...]] = None,
 ) -> Feature:
-    """trRosetta dihedral features
-    """
-    phi, psi, omega = get_tr_rosetta_orientation_mats(*bb_coords) \
-        if not exists(tr_angles) else tr_angles
+    """trRosetta dihedral features"""
+    phi, psi, omega = get_tr_rosetta_orientation_mats(*bb_coords) if not exists(tr_angles) else tr_angles
     ori_feats = torch.cat([x.unsqueeze(-1) for x in (phi, psi, omega)], dim=-1)
     encoded_ori_feats = None
     if encode:
@@ -237,7 +227,7 @@ def tr_rosetta_ori_encoding(
         name=FeatureName.TR_ORI.value,
         dtype=torch.long if encode else torch.float32,
         ty=FeatureTy.PAIR,
-        n_classes=n_classes
+        n_classes=n_classes,
     )
 
 
@@ -267,14 +257,13 @@ def local_rel_coords(ca_coords: Tensor, quats: Tensor) -> Feature:
         name=FeatureName.REL_COORD.value,
         ty=FeatureTy.PAIR,
         n_classes=None,
-        raw_mask_value=torch.zeros(3).float()
+        raw_mask_value=torch.zeros(3).float(),
     )
 
 
 def rel_chain_encoding(chain_ids) -> Feature:
     """Encode relative chain"""
-    diffs = rearrange(chain_ids, "i -> i () ()") - \
-            rearrange(chain_ids, "i -> () i ()")  # noqa
+    diffs = rearrange(chain_ids, "i -> i () ()") - rearrange(chain_ids, "i -> () i ()")  # noqa
     clamped_diffs = (2 + torch.clamp(diffs, min=-1, max=1)).long()
     return Feature(
         raw_data=diffs,
@@ -290,27 +279,25 @@ def extra_encoding(extra: Tensor, ty: FeatureTy) -> Feature:
     return Feature(
         raw_data=extra.float(),
         encoded_data=extra.float(),
-        name=FeatureName.EXTRA_RES.value if ty == FeatureTy.RESIDUE
-        else FeatureName.EXTRA_PAIR.value,
+        name=FeatureName.EXTRA_RES.value if ty == FeatureTy.RESIDUE else FeatureName.EXTRA_PAIR.value,
         ty=ty,
         n_classes=extra.shape[-1],
     )
 
+
 def sc_dihedral_encoding(coords, mask, sequence_enc):
-    coords, mask, sequence_enc = map(lambda x: x.unsqueeze(0) if x.shape[0]>1 else x, (coords, mask, sequence_enc))
+    coords, mask, sequence_enc = map(lambda x: x.unsqueeze(0) if x.shape[0] > 1 else x, (coords, mask, sequence_enc))
     ptn = dict(aatype=sequence_enc, all_atom_positions=coords, all_atom_mask=mask)
     torsion_info = atom37_to_torsion_angles(ptn)
     sin_cos = safe_normalize(torsion_info["torsion_angles_sin_cos"].detach()).squeeze(0)
     theta = torch.atan2(*sin_cos.unbind(-1))
-    sin_cos = rearrange(sin_cos,"n d a -> n (d a)")
-    data = torch.cat((sin_cos,theta),dim=-1).detach()
+    sin_cos = rearrange(sin_cos, "n d a -> n (d a)")
+    data = torch.cat((sin_cos, theta), dim=-1).detach()
     assert data.shape[-1] == 21
     return Feature(
         raw_data=data.float(),
         encoded_data=data.float(),
-        name = FeatureName.SC_DIHEDRAL.value,
-        ty = FeatureTy.RESIDUE,
-        n_classes=data.shape[-1]
+        name=FeatureName.SC_DIHEDRAL.value,
+        ty=FeatureTy.RESIDUE,
+        n_classes=data.shape[-1],
     )
-
-
