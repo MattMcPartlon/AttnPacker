@@ -219,16 +219,16 @@ def compute_pairwise_vdw_table_and_mask(
     vdw_pair_mask = to_pairwise_diffs(all_atom_res_indices) > 0  # N,N
 
     # (2) mask out BB-BB interactions
-    bb_atom_types = pc.BB_ATOMS + ["CB"]  # CB placement is completely determined by given backbone conformation
-    bb_atom_types = set(pc.ALL_ATOMS).intersection(set(bb_atom_types))
-    bb_atom_posns = [pc.ALL_ATOMS.index(atom) for atom in bb_atom_types]
+    bb_atom_types = set(pc.BB_ATOMS + ["CB"])  # CB placement is completely determined by given backbone conformation
+    # bb_atom_types = set(pc.ALL_ATOMS).intersection(set(bb_atom_types))
+    bb_atom_posns = [pc.ALL_ATOM_POSNS[atom] for atom in bb_atom_types]
     bb_mask = torch.zeros_like(atom_mask).float()
     # backbone atoms have 1, all others set to 0
     bb_mask[:, :, bb_atom_posns] = 1
-    bb_mask = bb_mask[atom_mask]  # indicates which atoms are backbone
-    bb_pair_mask = (bb_mask.unsqueeze(-1) - bb_mask.unsqueeze(0)) == 0
+    bb_mask = bb_mask[atom_mask]
+    bb_pair_mask = bb_mask.unsqueeze(1) * bb_mask.unsqueeze(0)
     # update vdw pair mask
-    vdw_pair_mask = vdw_pair_mask & ~bb_pair_mask
+    vdw_pair_mask = vdw_pair_mask & ~bb_pair_mask.bool()
 
     # (3) Correct with tolerance for H-Bonds
     hbd, hba = pc.HBOND_DONOR_TENSOR, pc.HBOND_ACCEPTOR_TENSOR
@@ -274,7 +274,7 @@ def _compute_steric_loss(
     masked_reduce: bool = True,
     reduction: str = "sum",
     p: int = 2,
-    tol: float = 0.1,
+    tol: float = 0.0,
 ) -> Union[Tensor, Tuple[Tensor, List]]:
     # pairwise distances
     all_atom_coords = atom_coords[atom_mask]  # N, 3
