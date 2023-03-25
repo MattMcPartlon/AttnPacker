@@ -1,4 +1,5 @@
-Bio==1.5.6
+Bio==1.5.1
+biopython==1.79
 cached_property==1.5.2
 einops==0.3.0
 filelock==3.9.0
@@ -8,5 +9,6 @@ scoring==0.0.9
 torch==1.11.0
 torchtyping==0.1.4
 typeguard==2.13.3
+matplotlib
 notebook
 nglview

@@ -331,13 +331,17 @@ class Inference:
         self._init_model()
         return self.model
 
-    def load_example(self, pdb_path, fasta_path=None, design_mask=None):
-        protein = Protein.FromPDBAndSeq(
-            pdb_path=pdb_path,
-            seq=fasta_path,
-            atom_tys=pc.ALL_ATOMS,
-            missing_seq=fasta_path is None,
-            load_ss=False,
+    def load_example(self, pdb_path, fasta_path=None, design_mask=None, protein=None):
+        protein = (
+            Protein.FromPDBAndSeq(
+                pdb_path=pdb_path,
+                seq=fasta_path,
+                atom_tys=pc.ALL_ATOMS,
+                missing_seq=fasta_path is None,
+                load_ss=False,
+            )
+            if (not exists(protein))
+            else protein
         )
         protein, _ = impute_cb(protein, protein)
         extra = _augment(protein, protein)
