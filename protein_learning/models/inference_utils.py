@@ -13,9 +13,11 @@ import protein_learning.common.protein_constants as pc
 from protein_learning.features.input_embedding import InputEmbedding
 from protein_learning.models.utils.dataset_augment_fns import impute_cb
 from protein_learning.common.data.data_types.model_input import ModelInput
+from protein_learning.common.data.data_types.model_output import ModelOutput
 from typing import Optional, Union
 from torch import Tensor
 import traceback
+from copy import deepcopy
 
 
 def fill_atom_masks(protein: Protein, overwrite: bool = False) -> Protein:
@@ -139,6 +141,94 @@ def post_process_prediction(model, model_in, model_out, device="cpu"):
     return {k: fn(v) for k, v in out.items()}
 
 
+def chunk_inference(
+    model,
+    sample: ModelInput,
+    max_len: int = 500,
+    device="cpu",
+):
+    seq_len = len(sample.decoy.seq)
+    crops, crop_offset = get_inference_crops(max_len, seq_len=seq_len)
+    output = []
+
+    for crop in crops:
+        sample.native.__clear_cache__()
+        sample.decoy.__clear_cache__()
+        sample_copy = deepcopy(sample)
+        croppy = sample_copy.to(device).crop(max_len, bounds=crop)  # punny
+        output.append(model(croppy))
+
+    device = output[0].scalar_output.device
+    scalar_out_shape = output[0].scalar_output.shape
+    pair_dim = output[0].pair_output.shape[-1]
+    predicted_coords = torch.zeros(1, seq_len, 37, 3, device=device)
+    scalar_output = torch.zeros(1, seq_len, scalar_out_shape[-1], device=device)
+    pair_output = torch.zeros(1, seq_len, seq_len, pair_dim, device=device)
+
+    quats, translations, angles = None, None, None
+    if exists(output[0].angles):
+        angles = torch.zeros(1, seq_len, *output[0].angles.shape[2:], device=device)
+    if exists(output[0].pred_rigids):
+        quats = torch.zeros(1, seq_len, *output[0].pred_rigids.quaternions.shape[2:], device=device)
+        translations = torch.zeros(1, seq_len, *output[0].pred_rigids.translations.shape[2:], device=device)
+
+    for i in range(len(crops)):
+        offset = 0 if i == 0 else crop_offset // 2
+        start, end = crops[i]
+        curr_out = output[i]
+        scalar_output[:, start + offset : end] = curr_out.scalar_output[:, offset:]
+        predicted_coords[:, start + offset : end] = curr_out.predicted_coords[:, offset:]
+        pair_output[:, start + offset : end, start + offset : end] = curr_out.pair_output[:, offset:, offset:]
+        if exists(curr_out.pred_rigids):
+            translations[:, start + offset : end] = curr_out.pred_rigids.translations[:, offset:]
+            quats[:, start + offset : end] = curr_out.pred_rigids.quaternions[:, offset:]
+        if exists(curr_out.angles):
+            angles[:, start + offset : end] = curr_out.angles[:, offset:]
+
+    # overwrite model out features
+    return ModelOutput(
+        scalar_output=scalar_output,
+        predicted_coords=predicted_coords,
+        pair_output=pair_output,
+        model_input=sample.to(device),
+        extra=dict(
+            pred_rigids=None, chain_indices=sample.decoy.chain_indices, angles=angles, unnormalized_angles=angles
+        ),
+    )
+
+
+"""Helper Methods"""
+
+
+def get_inference_crops(max_len, seq_len):
+    crop_offset = min(max_len // 2, 200)
+    crops, start = [(0, max_len)], max_len - crop_offset
+    while start < seq_len - crop_offset:
+        crop = (start, min(seq_len, start + max_len))
+        crops.append(crop)
+        start += max_len - crop_offset
+    crops = crops[:-1]
+    crops.append((seq_len - max_len, seq_len))
+    return crops, crop_offset
+
+
+def _convert_tensor(x: torch.Tensor):
+    x = x.squeeze(0).detach().cpu()
+    if x.dtype in [torch.float32, torch.double, torch.float64, torch.float]:
+        x = x.float()
+    return x.numpy()
+
+
+def _convert_value(value):
+    if torch.is_tensor(value):
+        return _convert_tensor(value)
+    if isinstance(value, list):
+        return [_convert_value(x) for x in value]
+    if isinstance(value, tuple):
+        return tuple([_convert_value(x) for x in value])
+    return value
+
+
 INFERENCE_ARGS = """
 # whether todesign sequence
 --mask_seq
@@ -255,7 +345,7 @@ class Inference:
 
         return ModelInput(
             decoy=protein,
-            native=protein,
+            native=protein.clone(),
             input_features=self.feat_gen.generate_features(
                 protein,
                 extra=extra,
@@ -272,11 +362,14 @@ class Inference:
     def device(self):
         return next(self.model.parameters()).device
 
-    def infer(self, pdb_path, fasta_path=None, design_mask=None, post_process=True):
+    def infer(self, pdb_path, fasta_path=None, design_mask=None, post_process=True, chunk_size: int = 1e9):
         model = self.get_model()
         with torch.no_grad():
             model_input = self.load_example(pdb_path, fasta_path, design_mask)
-            model_output = model(model_input, use_cycles=1)
+            if len(model_input.decoy) <= chunk_size:
+                model_output = model(model_input, use_cycles=1)
+            else:
+                model_output = chunk_inference(model, model_input, max_len=chunk_size)
             if post_process:
                 return post_process_prediction(model, model_input, model_output)
             return model_output

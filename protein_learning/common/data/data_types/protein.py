@@ -176,7 +176,7 @@ class Protein:
         sec_struct = None
         if exists(heavy.sec_struct):
             heavy_ss = [x for x in heavy.sec_struct]
-            for (s, e) in heavy_cdrs:
+            for s, e in heavy_cdrs:
                 for i in range(e - s + 1):
                     heavy_ss[s + i] = "C"
             sec_struct = "".join(heavy_ss) + light_ss
@@ -263,9 +263,8 @@ class Protein:
         return self
 
     def crop(self, start: int, end: int) -> Protein:
-
         """Crop the protein from start..end"""
-        assert end <= len(self.seq)
+        assert end <= len(self.seq), f"end: {end}, len(seq): {len(self.seq)} len(self): {len(self)}"
         self.seq = self.seq[start:end]
         self.atom_coords = self.atom_coords[..., start:end, :, :].clone()
         self.atom_masks = self.atom_masks[..., start:end, :].clone()
@@ -769,19 +768,19 @@ class Protein:
                     mask[s : e + 1, 1] = 1
         return mask
 
-    def from_coords_n_seq(self, coords: Tensor, seq: Optional[str]=None)->Protein:
+    def from_coords_n_seq(self, coords: Tensor, seq: Optional[str] = None) -> Protein:
         return Protein(
             atom_coords=coords,
             atom_masks=self.atom_masks,
             atom_tys=self.atom_tys,
             seq=default(seq, self.seq),
-            name = self._name,
-            res_ids = self.res_ids,
-            chain_ids= self.chain_ids,
+            name=self._name,
+            res_ids=self.res_ids,
+            chain_ids=self.chain_ids,
             chain_indices=self.chain_indices,
             chain_names=self.chain_names,
             sec_struct=self.sec_struct,
-            cdrs=self.cdrs
+            cdrs=self.cdrs,
         )
 
 

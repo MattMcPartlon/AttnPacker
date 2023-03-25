@@ -364,7 +364,6 @@ class ModelEvaluator:
         model.load_state_dict(checkpoint['model'], strict=True)
         return model
     """
-
 """Helper Methods"""
 
 def get_inference_crops(
