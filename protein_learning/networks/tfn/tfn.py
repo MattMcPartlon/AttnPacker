@@ -1,13 +1,10 @@
 from typing import Dict, Tuple, Optional
 
-from einops import rearrange # noqa
+from einops import rearrange  # noqa
 from torch import nn
 
 from protein_learning.networks.common.helpers.neighbor_utils import NeighborInfo
-from protein_learning.networks.common.helpers.torch_utils import (
-    batched_index_select,
-    masked_mean
-)
+from protein_learning.networks.common.helpers.torch_utils import batched_index_select, masked_mean
 from protein_learning.networks.common.utils import exists, default
 from protein_learning.networks.tfn.repr.fiber import default_tymap, to_order
 from protein_learning.networks.common.equivariant.fiber_units import FiberLinear, FiberResidual
@@ -21,7 +18,6 @@ from functools import partial
 
 
 class ConvSE3(nn.Module):
-
     def __init__(self, config: TFNConfig):
         super().__init__()
         self.config = config
@@ -30,32 +26,38 @@ class ConvSE3(nn.Module):
         # Neighbor -> center weights
         self.kernel_unary = nn.ModuleDict()
         if not config.fuse_tfn_kernels:
-            for (di, mi), (do, mo) in (self.fiber_in * self.fiber_out):
-                self.kernel_unary[f'({di},{do})'] = PairwiseConv(di, mi, do, mo,
-                                                                 edge_dim=config.get_edge_dim(),
-                                                                 radial_dropout=config.radial_dropout,
-                                                                 radial_mult=config.radial_mult)
+            for (di, mi), (do, mo) in self.fiber_in * self.fiber_out:
+                self.kernel_unary[f"({di},{do})"] = PairwiseConv(
+                    di,
+                    mi,
+                    do,
+                    mo,
+                    edge_dim=config.get_edge_dim(),
+                    radial_dropout=config.radial_dropout,
+                    radial_mult=config.radial_mult,
+                )
         else:
             kernel_feats = self.fiber_in * self.fiber_out
             self.kernel_unary = FusedConv(
                 kernel_feats,
                 edge_dim=config.get_edge_dim(),
                 radial_dropout=config.radial_dropout,
-                radial_mult=config.radial_mult)
+                radial_mult=config.radial_mult,
+            )
 
         # Center -> center weights
         if config.self_interaction:
-            assert config.pool, 'must pool edges if followed with self interaction'
+            assert config.pool, "must pool edges if followed with self interaction"
             self.self_interact = FiberLinear(config.fiber_in, config.fiber_out)
             self.self_interact_sum = FiberResidual(safe_mode=True)
 
         self.ty_map = default(config.ty_map, default_tymap(config.fiber_in, config.fiber_out))
 
     def forward(
-            self,
-            features: Dict[str, Tensor],
-            edge_info: Tuple[Optional[Tensor], NeighborInfo],
-            basis: Dict[str, Tensor],
+        self,
+        features: Dict[str, Tensor],
+        edge_info: Tuple[Optional[Tensor], NeighborInfo],
+        basis: Dict[str, Tensor],
     ) -> Dict[str, Tensor]:
         """TFN-based convolution
 
@@ -81,13 +83,13 @@ class ConvSE3(nn.Module):
                 if not self.ty_map[degree_in][degree_out]:
                     continue
 
-                etype = f'({degree_in},{degree_out})'
+                etype = f"({degree_in},{degree_out})"
                 kernel_fn = self.kernel_unary[etype]
 
                 x = selected_input[str(degree_in)]
                 # process input, edges, and basis in chunks along the sequence dimension
-                _basis = basis[f'{degree_in},{degree_out}']
-                if config.checkpoint:
+                _basis = basis[f"{degree_in},{degree_out}"]
+                if config.checkpoint and self.training:
                     kernel_out = checkpoint.checkpoint(kernel_fn.forward, edge_features, x, _basis)
                 else:
                     kernel_out = kernel_fn(edge_features, x, _basis)
@@ -95,8 +97,7 @@ class ConvSE3(nn.Module):
 
             output = output.view(*x.shape[:3], -1, to_order(degree_out))  # noqa added reshape before mean
             if config.pool:
-                output = masked_mean(output, neighbor_masks, dim=2) if \
-                    exists(neighbor_masks) else output.mean(dim=2)
+                output = masked_mean(output, neighbor_masks, dim=2) if exists(neighbor_masks) else output.mean(dim=2)
 
             leading_shape = x.shape[:2] if config.pool else x.shape[:3]
             output = output.view(*leading_shape, -1, to_order(degree_out))
@@ -116,14 +117,14 @@ class PairwiseConv(nn.Module):
     """SE(3)-equivariant convolution between two single-type features"""
 
     def __init__(
-            self,
-            degree_in,
-            nc_in,
-            degree_out,
-            nc_out,
-            edge_dim=0,
-            radial_dropout=0.0,
-            radial_mult: float = 2,
+        self,
+        degree_in,
+        nc_in,
+        degree_out,
+        nc_out,
+        edge_dim=0,
+        radial_dropout=0.0,
+        radial_mult: float = 2,
     ):
         super().__init__()
         self.degree_in = degree_in
@@ -134,34 +135,32 @@ class PairwiseConv(nn.Module):
         self.num_freq = to_order(min(degree_in, degree_out))
         self.d_out = to_order(degree_out)
         self.edge_dim = edge_dim
-        self.rp = RadialFunc(self.num_freq, nc_in, nc_out, edge_dim,
-                             dropout=radial_dropout,
-                             mid_dim=int(edge_dim * radial_mult))
+        self.rp = RadialFunc(
+            self.num_freq, nc_in, nc_out, edge_dim, dropout=radial_dropout, mid_dim=int(edge_dim * radial_mult)
+        )
 
     def forward(self, edges, feats, basis) -> Tensor:
         out_shape = (*feats.shape[:3], -1, to_order(self.degree_out))
         feats = feats.view(-1, self.nc_in, to_order(self.degree_in))
         num_edges, in_dim = feats.shape[0], to_order(self.degree_in)
-        radial_weights = self.rp(edges) \
-            .view(-1, self.nc_out, self.nc_in * self.num_freq)
+        radial_weights = self.rp(edges).view(-1, self.nc_out, self.nc_in * self.num_freq)
         tmp = (feats @ basis).view(num_edges, -1, self.d_out)
         return (radial_weights @ tmp).view(out_shape)
 
 
 class FusedConv(nn.Module):
-
     def __init__(
-            self,
-            feat_dims,
-            edge_dim=0,
-            radial_dropout=0.0,
-            radial_mult: float = 2,
+        self,
+        feat_dims,
+        edge_dim=0,
+        radial_dropout=0.0,
+        radial_mult: float = 2,
     ):
         super(FusedConv, self).__init__()
         self.dims = dict()
         split_sizes = []
         for (di, mi), (do, mo) in feat_dims:
-            key = f'({di},{do})'
+            key = f"({di},{do})"
             num_freq = to_order(min(di, do))
             self.dims[key] = (di, mi, do, mo)
             split_sizes.append(num_freq * mi * mo)
@@ -169,11 +168,13 @@ class FusedConv(nn.Module):
         self.edge_dim = edge_dim
         mid_dim = edge_dim * radial_mult * len(self.dims)
         self.rp = nn.Sequential(
-            nn.Linear(edge_dim, mid_dim), GELU,
+            nn.Linear(edge_dim, mid_dim),
+            GELU,
             nn.Dropout(radial_dropout) if radial_dropout > 0 else nn.Identity(),
-            nn.Linear(mid_dim, mid_dim), GELU,
+            nn.Linear(mid_dim, mid_dim),
+            GELU,
             nn.Dropout(radial_dropout) if radial_dropout > 0 else nn.Identity(),
-            SplitLinear(mid_dim, dim_out=sum(split_sizes), sizes=split_sizes, bias=False)
+            SplitLinear(mid_dim, dim_out=sum(split_sizes), sizes=split_sizes, bias=False),
         )
 
     def radial_weights(self, edges, key):
@@ -182,7 +183,7 @@ class FusedConv(nn.Module):
             rp = self.rp(edges)
             for i, k in enumerate(self.dims):
                 di, mi, do, mo = self.dims[k]
-                self._radial_weights[k] = rearrange(rp[i], '... (o i f) -> ... o () i () f', i=mi, o=mo)
+                self._radial_weights[k] = rearrange(rp[i], "... (o i f) -> ... o () i () f", i=mi, o=mo)
         return self._radial_weights[key]
 
     def forward(self, edges, feats, basis, key) -> Tensor:
@@ -205,9 +206,18 @@ class FusedConv(nn.Module):
 class RadialFunc(nn.Module):
     """NN parameterized radial profile function."""
 
-    def __init__(self, num_freq: int, in_dim: int, out_dim: int,
-                 edge_dim=None, mid_dim=None, nonlin=GELU,
-                 hidden_layer: bool = True, compress=False, dropout=0.0):
+    def __init__(
+        self,
+        num_freq: int,
+        in_dim: int,
+        out_dim: int,
+        edge_dim=None,
+        mid_dim=None,
+        nonlin=GELU,
+        hidden_layer: bool = True,
+        compress=False,
+        dropout=0.0,
+    ):
         super().__init__()
         self.num_freq = num_freq
         self.in_dim = in_dim
@@ -216,17 +226,19 @@ class RadialFunc(nn.Module):
         self.out_dim = out_dim
         bias = dropout > 0
 
-        layer = lambda i, o, norm=True: nn.ModuleList([
-            nn.Linear(i, o),
-            nn.LayerNorm(o) if norm else nn.Identity,
-            nonlin,
-            nn.Dropout(dropout) if dropout > 0 else nn.Identity()
-        ])
+        layer = lambda i, o, norm=True: nn.ModuleList(
+            [
+                nn.Linear(i, o),
+                nn.LayerNorm(o) if norm else nn.Identity,
+                nonlin,
+                nn.Dropout(dropout) if dropout > 0 else nn.Identity(),
+            ]
+        )
         if not compress:
             self.net = nn.Sequential(
                 *layer(edge_dim, mid_dim),
                 *layer(mid_dim, mid_dim) if hidden_layer else nn.Identity(),
-                nn.Linear(mid_dim, num_freq * in_dim * out_dim, bias=bias)
+                nn.Linear(mid_dim, num_freq * in_dim * out_dim, bias=bias),
             )
         else:
             mid_dim, code_dim = edge_dim // 2, edge_dim // 4
@@ -234,8 +246,8 @@ class RadialFunc(nn.Module):
                 *layer(edge_dim, mid_dim, norm=True),
                 *layer(mid_dim, code_dim, norm=True),
                 *layer(code_dim, mid_dim, norm=True),
-                nn.Linear(mid_dim, num_freq * in_dim * out_dim, bias=bias)
+                nn.Linear(mid_dim, num_freq * in_dim * out_dim, bias=bias),
             )
 
     def forward(self, x) -> Tensor:
-        return rearrange(self.net(x), '... (o i f) -> ... o () i () f', i=self.in_dim, o=self.out_dim)
+        return rearrange(self.net(x), "... (o i f) -> ... o () i () f", i=self.in_dim, o=self.out_dim)

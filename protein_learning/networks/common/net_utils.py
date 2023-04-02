@@ -106,7 +106,7 @@ class LearnedOuter(nn.Module):  # noqa
 
     def forward(self, feats: Tensor) -> Tensor:
         """Apply learned outer product"""
-        if self.do_checkpoint:
+        if self.do_checkpoint and self.training:
             return checkpoint.checkpoint(self._forward, feats)
         return self._forward(feats)
 
