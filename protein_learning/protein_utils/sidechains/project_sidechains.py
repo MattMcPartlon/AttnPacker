@@ -480,6 +480,7 @@ class SingleSeqStericLoss(nn.Module):
         self,
         atom_mask: TensorType["batch", "res", "atom", torch.bool],
         sequence: Optional[TensorType["batch", "res", torch.bool]],
+        atom_coords: Optional[TensorType["batch", "res", "atom", 3]] = None,
         hbond_allowance: float = 0.6,
         global_allowance: float = 0.1,
         global_tol_frac: float = 1,
@@ -606,7 +607,9 @@ def project_onto_rotamers(
     ).to(device)
     print(f"[fn: project_onto_rotamers] : Using device {device}")
 
-    steric_loss_fn = SingleSeqStericLoss(atom_mask=atom_mask, sequence=sequence, **default(steric_loss_kwargs, dict()))
+    steric_loss_fn = SingleSeqStericLoss(
+        atom_mask=atom_mask, sequence=sequence, atom_coords=atom_coords, **default(steric_loss_kwargs, dict())
+    )
 
     print("[INFO] Beginning rotamer projection")
     initial_rmsd, initial_steric, dev_loss = get_losses(
