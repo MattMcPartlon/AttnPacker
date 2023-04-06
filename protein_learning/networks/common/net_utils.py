@@ -41,10 +41,13 @@ def safe_normalize(x: Tensor, eps: float = 1e-12) -> Tensor:
 @contextmanager
 def disable_tf32():
     """temporarily disable 32-bit float ops"""
-    orig_value = torch.backends.cuda.matmul.allow_tf32  # noqa
-    torch.backends.cuda.matmul.allow_tf32 = False  # noqa
-    yield
-    torch.backends.cuda.matmul.allow_tf32 = orig_value  # noqa
+    if torch.cuda.is_available():
+        orig_value = torch.backends.cuda.matmul.allow_tf32  # noqa
+        torch.backends.cuda.matmul.allow_tf32 = False  # noqa
+        yield
+        torch.backends.cuda.matmul.allow_tf32 = orig_value  # noqa
+    else:
+        yield
 
 
 def coords_to_rel_coords(coords: Tensor, other: Optional[Tensor] = None) -> Tensor:

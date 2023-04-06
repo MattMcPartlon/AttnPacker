@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 """
 Functions to project side-chain atom predictions onto continuous rotamer library
 Finds sidechain rotamers minimizing RMSD to atom37 representation of coordinates.
@@ -15,6 +17,7 @@ from protein_learning.networks.loss.side_chain_loss import SideChainDihedralLoss
 from protein_learning.protein_utils.sidechains.sidechain_rigid_utils import atom37_to_torsion_angles
 from protein_learning.protein_utils.sidechains.sidechain_utils import align_symmetric_sidechains, swap_symmetric_atoms
 from protein_learning.common.rigids import Rigids as SimpleRigids
+from protein_learning.networks.common.helpers.neighbor_utils import get_neighbor_info, batched_index_select
 
 try:
     from functools import cached_property  # noqa
@@ -150,6 +153,8 @@ def compute_sc_rmsd(
     # disregard backbone atoms
     per_residue_rmsd = torch.sqrt(masked_mean(atom_deviations[..., 4:], mask=atom_mask[..., 4:], dim=-1))
     res_mask = torch.any(atom_mask[..., 4:], dim=-1)
+    if not torch.any(res_mask):
+        print("[WARNING] no side-chain atoms detected!")
     return per_residue_rmsd if per_residue else torch.mean(per_residue_rmsd[res_mask], dim=-1)
 
 
@@ -161,8 +166,9 @@ def rmsd_loss(predicted_coords, target_coords, atom_mask):
 
 def item(x: Any):
     if torch.is_tensor(x):
-        if len(x) == 0:
+        if len(x) <= 1:
             return x.item()
+    return x
 
 
 def compute_pairwise_vdw_table_and_mask(
@@ -190,7 +196,7 @@ def compute_pairwise_vdw_table_and_mask(
 
     Returns:
         (1) Table of the form
-            T[i,j] = rVDW[i] + rVDW[j] – allowance[i,j]
+            T[i,j] = rVDW[i] + rVDW[j] - allowance[i,j]
         (2) Mask of the form:
             M[i,j] = True if and only if steric overlap should be computed for pair (i,j)
 
@@ -268,13 +274,14 @@ def compute_pairwise_vdw_table_and_mask(
 def _compute_steric_loss(
     atom_coords: TensorType["batch", "res", "atom", 3],
     atom_mask: TensorType["batch", "res", "atom", torch.bool],
-    vdw_table: TensorType["N", "N"],  # N is total number of atoms
-    vdw_mask: TensorType["N", "N", torch.bool],
+    vdw_table: TensorType["N", "M"],  # N is total number of atoms
+    vdw_mask: TensorType["N", "M", torch.bool],
     return_clashing_pairs: bool = False,
     masked_reduce: bool = True,
     reduction: str = "sum",
     p: int = 2,
     tol: float = 0.0,
+    nbr_indices: Optional[Tensor] = None,
 ) -> Union[Tensor, Tuple[Tensor, List]]:
     # pairwise distances
     all_atom_coords = atom_coords[atom_mask]  # N, 3
@@ -480,7 +487,6 @@ class SingleSeqStericLoss(nn.Module):
         self,
         atom_mask: TensorType["batch", "res", "atom", torch.bool],
         sequence: Optional[TensorType["batch", "res", torch.bool]],
-        atom_coords: Optional[TensorType["batch", "res", "atom", 3]] = None,
         hbond_allowance: float = 0.6,
         global_allowance: float = 0.1,
         global_tol_frac: float = 1,
@@ -498,13 +504,14 @@ class SingleSeqStericLoss(nn.Module):
 
     @cached_property
     def table_and_mask(self):
-        return compute_pairwise_vdw_table_and_mask(
+        table, mask = compute_pairwise_vdw_table_and_mask(
             sequence=self.sequence,
             atom_mask=self.atom_mask,
             global_allowance=self.global_allowance,
             hbond_allowance=self.hbond_allowance,
             global_tol_frac=self.global_tol_frac,
         )
+        return table, mask
 
     def forward(self, coords: TensorType["batch", "res", "atoms", 3]) -> Tensor:
         table, mask = self.table_and_mask
@@ -526,7 +533,7 @@ def get_losses(
     atom_mask: TensorType["batch", "res", "atom"],
     sequence: TensorType["batch", "res"],
     compute_steric: bool = True,
-    steric_loss_fn: Optional[SingleSeqStericLoss] = None,
+    steric_loss_fn: Optional[Union[MemEfficientSingleSeqStericLoss, SingleSeqStericLoss]] = None,
     rotamer_proj: RotamerProjection = None,
 ):
     """Gets rmsd and steric loss"""
@@ -543,14 +550,19 @@ def get_losses(
             coords=predicted_coords,
         )
         if compute_steric
-        else 0
+        else torch.zeros(1)
     )
 
-    dihedral_dev_loss = 0
+    dihedral_dev_loss = torch.zeros(1)
     if exists(rotamer_proj):
         dihedral_dev_loss = rotamer_proj.dihedral_deviation_loss()
 
     return rmsd, steric, dihedral_dev_loss
+
+
+def print_verbose(msg, verbose):
+    if verbose:
+        print(msg)
 
 
 @typechecked
@@ -560,13 +572,14 @@ def project_onto_rotamers(
     atom_mask: TensorType["batch", "res", "atom", torch.bool],
     optim_repeats: int = 2,
     use_input_backbone: bool = True,
-    steric_clash_weight: Union[float, List[float]] = 0,
+    steric_clash_weight: Optional[Union[float, List[float]]] = 0,
     optim_kwargs: Optional[Dict] = None,
     steric_loss_kwargs: Optional[Dict] = None,
     device="cpu",
     optim_ty: str = "LBFGS",
     max_optim_iters: int = 400,
     torsion_deviation_loss_wt: float = 0.0,
+    verbose: bool = True,
 ) -> Tuple[TensorType["batch", "res", "atom", 3], TensorType["batch", "res", 7, 2]]:  # coords and dihedrals
     """Project residue sidechain coordinates to nearest rotamer
 
@@ -605,19 +618,24 @@ def project_onto_rotamers(
         atom_mask=atom_mask,
         use_input_backbone=use_input_backbone,
     ).to(device)
-    print(f"[fn: project_onto_rotamers] : Using device {device}")
 
-    steric_loss_fn = SingleSeqStericLoss(
-        atom_mask=atom_mask, sequence=sequence, atom_coords=atom_coords, **default(steric_loss_kwargs, dict())
+    print_verbose(f"[fn: project_onto_rotamers] : Using device {device}", verbose)
+    steric_clash_weight = default(steric_clash_weight, 0)
+    steric_loss_fn = (
+        MemEfficientSingleSeqStericLoss(
+            atom_mask=atom_mask, sequence=sequence, atom_coords=atom_coords, **default(steric_loss_kwargs, dict())
+        )
+        if steric_clash_weight != 0
+        else None
     )
 
-    print("[INFO] Beginning rotamer projection")
+    print_verbose("[INFO] Beginning rotamer projection", verbose)
     initial_rmsd, initial_steric, dev_loss = get_losses(
         predicted_coords=module(),
         target_coords=atom_coords,
         atom_mask=atom_mask,
         steric_loss_fn=steric_loss_fn,
-        compute_steric=True,
+        compute_steric=exists(steric_loss_fn),
         sequence=sequence,
         rotamer_proj=module,
     )
@@ -628,7 +646,7 @@ def project_onto_rotamers(
         f"   [Steric loss] = {round(initial_steric.item(), 3)}\n"
         f"   [Angle Dev. loss] = {round(dev_loss.item(), 3)}\n"
     )
-    print(update_str)
+    print_verbose(update_str, verbose)
 
     # set steric clash weights for each optim. repeat
     steric_clash_weights = (
@@ -647,7 +665,7 @@ def project_onto_rotamers(
             opt = torch.optim.Adam(module.parameters(), **_optim_kwargs)
         _optim_kwargs["lr"] = _optim_kwargs["lr"] * 0.9
         steric_clash_weight = steric_clash_weights[eval_iter]
-        print(f"beginning iter: {eval_iter}, steric weight: {steric_clash_weight}")
+        print_verbose(f"beginning iter: {eval_iter}, steric weight: {steric_clash_weight}", verbose)
 
         def loss_closure():
             """For LBFGS"""
@@ -683,6 +701,7 @@ def project_onto_rotamers(
         target_coords=atom_coords,
         atom_mask=atom_mask,
         steric_loss_fn=steric_loss_fn,
+        compute_steric=exists(steric_loss_fn),
         sequence=sequence,
         rotamer_proj=module,
     )
@@ -693,7 +712,7 @@ def project_onto_rotamers(
         f"   [Steric loss] = {round(final_steric.item(), 3)}\n"
         f"   [Angle Dev. loss] = {round(final_dev.item(), 3)}\n"
     )
-    print(update_str)
+    print_verbose(update_str, verbose)
     return final_coords, module.dihedrals
 
 
@@ -760,3 +779,70 @@ def iterative_project_onto_rotamers(
         x0, xt = prev_atom_coords[atom_ty_mask], aligned_next[atom_ty_mask]
         prev_atom_coords[atom_ty_mask] = override_alpha * x0 + (1 - override_alpha) * xt
     return prev_atom_coords, dihedrals
+
+
+class MemEfficientSingleSeqStericLoss(nn.Module):
+    """More efficient version of SingleSeqStericLoss
+
+    sometimes efficiency comes at the cost of 'understandability' :()
+    """
+
+    def __init__(
+        self,
+        atom_mask: TensorType["batch", "res", "atom", torch.bool],
+        sequence: Optional[TensorType["batch", "res", torch.bool]],
+        atom_coords: Optional[TensorType["batch", "res", "atom", 3]] = None,
+        hbond_allowance: float = 0.6,
+        global_allowance: float = 0.1,
+        global_tol_frac: float = 1,
+        reduction: str = "sum",
+        p: int = 2,
+        top_k: int = 32,
+    ):
+        super(MemEfficientSingleSeqStericLoss, self).__init__()
+        self.atom_mask = atom_mask
+        self.sequence = sequence
+        self.hbond_allowance = hbond_allowance
+        self.global_allowance = global_allowance
+        self.reduction = reduction
+        self.global_tol_frac = global_tol_frac
+        self.p = p
+        valid_coords = atom_coords[atom_mask].unsqueeze(0)
+        self.nbr_indices = get_neighbor_info(valid_coords, max_radius=1e10, top_k=top_k).indices
+
+    @cached_property
+    def table_and_mask(self):
+        table, mask = compute_pairwise_vdw_table_and_mask(
+            sequence=self.sequence,
+            atom_mask=self.atom_mask,
+            global_allowance=self.global_allowance,
+            hbond_allowance=self.hbond_allowance,
+            global_tol_frac=self.global_tol_frac,
+        )
+        table = batched_index_select(table, self.nbr_indices.squeeze())
+        mask = batched_index_select(mask, self.nbr_indices.squeeze())
+        return table, mask
+
+    def forward(self, coords: TensorType["batch", "res", "atoms", 3]) -> Tensor:
+        table, mask = self.table_and_mask
+        masked_coords = coords[self.atom_mask]
+        nbr_coords = masked_coords.unsqueeze(-2) - batched_index_select(
+            masked_coords, self.nbr_indices.squeeze(), dim=0
+        )
+        relative_dists = safe_norm(nbr_coords, dim=-1)
+
+        vdw_loss = F.relu(table - relative_dists, inplace=False) ** self.p
+        # conside only inter-residue interactions, between residue_i and residue_j where i>j
+        vdw_loss[~mask] = 0
+        vdw_loss = vdw_loss[vdw_loss > 0]
+        zero_loss = relative_dists.new_zeros(1)
+        if self.reduction == "none":
+            loss = vdw_loss
+        elif self.reduction == "mean":
+            loss = torch.mean(vdw_loss) if len(vdw_loss) > 0 else zero_loss  # grad can be nan o.w.
+        elif self.reduction == "sum":
+            loss = torch.sum(vdw_loss) if len(vdw_loss) > 0 else zero_loss  # grad can be nan o.w.
+        else:
+            raise Exception(f"reduction {self.reduction} not in ['mean','sum','none']")
+
+        return loss

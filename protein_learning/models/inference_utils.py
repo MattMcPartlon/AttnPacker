@@ -105,7 +105,7 @@ def make_predicted_protein(model_out, seq: Optional[Union[str, Tensor]] = None) 
     return pred_protein
 
 
-def post_process_prediction(model, model_in, model_out, device="cpu"):
+def format_prediction(model, model_in, model_out, device="cpu"):
     # masked residue positions
     seq_mask = default(model_in.input_features.seq_mask, torch.zeros(len(model_in.decoy)).bool())
 
@@ -366,7 +366,7 @@ class Inference:
     def device(self):
         return next(self.model.parameters()).device
 
-    def infer(self, pdb_path, fasta_path=None, design_mask=None, post_process=True, chunk_size: int = 1e9):
+    def infer(self, pdb_path, fasta_path=None, design_mask=None, format=True, chunk_size: int = 1e9):
         model = self.get_model()
         with torch.no_grad():
             model_input = self.load_example(pdb_path, fasta_path, design_mask)
@@ -374,6 +374,6 @@ class Inference:
                 model_output = model(model_input, use_cycles=1)
             else:
                 model_output = chunk_inference(model, model_input, max_len=chunk_size)
-            if post_process:
-                return post_process_prediction(model, model_input, model_output)
+            if format:
+                return format_prediction(model, model_input, model_output)
             return model_output

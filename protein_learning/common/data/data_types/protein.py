@@ -22,7 +22,7 @@ from protein_learning.common.io.pdb_utils import (
 )
 from protein_learning.common.io.sequence_utils import load_fasta_file
 from protein_learning.common.io.pdb_io import write_pdb
-from protein_learning.common.protein_constants import BB_ATOMS, SC_ATOMS, AA_TO_INDEX
+from protein_learning.common.protein_constants import BB_ATOMS, SC_ATOMS, AA_TO_INDEX, ALL_ATOMS
 from protein_learning.protein_utils.align.per_residue import impute_beta_carbon
 
 
@@ -99,6 +99,8 @@ class Protein:
         self.replica = 0
 
     def _check_chain_indices(self):
+        if self.chain_indices is None:
+            return
         to_set = lambda tnsr: set([x.item() for x in tnsr])
         idx_set = to_set(torch.cat(self.chain_indices).cpu())
         expected_idxs = to_set(torch.arange(len(self)))
@@ -204,6 +206,10 @@ class Protein:
         if self.is_antibody:
             return self.chain_names[0][2:6]
         return self.chain_names[0][:4]
+
+    @classmethod
+    def FromPDB(cls, pdb_path: str) -> Protein:
+        return Protein.FromPDBAndSeq(pdb_path=pdb_path, seq=None, missing_seq=True, atom_tys=ALL_ATOMS, load_ss=False)
 
     @classmethod
     def FromPDBAndSeq(
@@ -544,6 +550,7 @@ class Protein:
         write_ss: bool = False,
         chain_labels=None,
         res_idxs: Optional[List[List[int]]] = None,
+        beta=None,
     ) -> None:
         """saves this protein to a .pdb file"""
         atom_tys = default(atom_tys, self.atom_tys)
@@ -576,7 +583,9 @@ class Protein:
             if exists(self.sec_struct) and write_ss:
                 for i in chain_indices:
                     ss += self.sec_struct[i]
-            write_pdb(coord_dicts, seq=_seq, out_path=path, chain_ids=chain_ids, ss=None, res_idxs=residue_indices)
+            write_pdb(
+                coord_dicts, seq=_seq, out_path=path, chain_ids=chain_ids, ss=None, res_idxs=residue_indices, beta=beta
+            )
 
     def impute_cb(self, override: bool = False, exists_ok: bool = False) -> Tuple[Tensor, Tensor]:
         """Impute CB atom position"""

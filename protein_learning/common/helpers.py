@@ -3,7 +3,7 @@ from contextlib import contextmanager
 from typing import Optional, Tuple, Any, Union
 
 import torch
-from einops import rearrange # noqa
+from einops import rearrange  # noqa
 from torch import Tensor
 
 from protein_learning.common.protein_constants import INDEX_TO_AA_ONE
@@ -46,15 +46,12 @@ def res_labels_to_seq(res_labels: Tensor) -> str:
 
 
 def k_spatial_nearest_neighbors(
-        points: Tensor,
-        idx: int,
-        top_k: int,
-        max_dist: Optional[float] = None,
-        include_self: bool = False
+    points: Tensor, idx: int, top_k: int, max_dist: Optional[float] = None, include_self: bool = False
 ) -> Tensor:
     """Get k nearest neighbors for point at index idx"""
-    assert points.ndim == 2, f"this function expects coordinate of shape (n,3) - " \
-                             f"does not work for batched coordinates"
+    assert points.ndim == 2, (
+        f"this function expects coordinate of shape (n,3) - " f"does not work for batched coordinates"
+    )
     diffs = points - rearrange(points[idx], "c -> () c")
     dists = safe_norm(diffs, dim=-1)
     dists[idx] = 0 if include_self else get_max_val(dists)
@@ -76,14 +73,12 @@ def rotation_from_3_points(p1: Tensor, p2: Tensor, p3: Tensor) -> Tensor:
 
 
 def exists(x):
-    """Returns true iff x is not None.
-    """
+    """Returns true iff x is not None."""
     return x is not None
 
 
 def default(x, y):
-    """Returns x if x exists, otherwise y.
-    """
+    """Returns x if x exists, otherwise y."""
     return x if x is not None else y
 
 
@@ -129,8 +124,8 @@ def masked_mean(tensor, mask, dim=-1, keepdim=False):
     assert tensor.shape[dim] == mask.shape[dim] if isinstance(dim, int) else True
     tensor = torch.masked_fill(tensor, ~mask, 0)
     total_el = mask.sum(dim=dim, keepdim=keepdim)
-    mean = tensor.sum(dim=dim, keepdim=keepdim) / total_el.clamp(min=1.)
-    return mean.masked_fill(total_el == 0, 0.)
+    mean = tensor.sum(dim=dim, keepdim=keepdim) / total_el.clamp(min=1.0)
+    return mean.masked_fill(total_el == 0, 0.0)
 
 
 def batched_index_select(values: Tensor, indices: Tensor, dim: int = 1) -> Tensor:
@@ -140,9 +135,8 @@ def batched_index_select(values: Tensor, indices: Tensor, dim: int = 1) -> Tenso
     :param dim: the dimension to select from
     :return: tensor with selected (or sub-selected) values according to indices.
     """
-    assert dim >= 0, f"ERROR: batched index selection requires dim argument to be " \
-                     f"non-negative!, got {dim}"
-    value_dims = values.shape[(dim + 1):]
+    assert dim >= 0, f"ERROR: batched index selection requires dim argument to be " f"non-negative!, got {dim}"
+    value_dims = values.shape[(dim + 1) :]
     values_shape, indices_shape = map(lambda t: list(t.shape), (values, indices))
     indices = indices[(..., *((None,) * len(value_dims)))]
     indices = indices.expand(*((-1,) * len(indices_shape)), *value_dims)
@@ -165,22 +159,24 @@ def calc_tm_torch(deviations: Tensor, norm_len: Optional[int] = None) -> Tensor:
     :return: tm score (0-1)
     """
     norm_len = norm_len if norm_len else len(deviations.numel())
-    d0 = 0.5 if norm_len <= 15 else 1.24 * ((norm_len - 15.0) ** (1. / 3.)) - 1.8
-    return torch.mean(1 / (1 + (torch.square(deviations) / (d0 ** 2))))
+    d0 = 0.5 if norm_len <= 15 else 1.24 * ((norm_len - 15.0) ** (1.0 / 3.0)) - 1.8
+    return torch.mean(1 / (1 + (torch.square(deviations) / (d0**2))))
 
 
 @contextmanager
 def disable_tf32():
     """temporarily disable 32-bit float ops"""
-    orig_value = torch.backends.cuda.matmul.allow_tf32  # noqa
-    torch.backends.cuda.matmul.allow_tf32 = False  # noqa
-    yield
-    torch.backends.cuda.matmul.allow_tf32 = orig_value  # noqa
+    if torch.cuda.is_available():
+        orig_value = torch.backends.cuda.matmul.allow_tf32  # noqa
+        torch.backends.cuda.matmul.allow_tf32 = False  # noqa
+        yield
+        torch.backends.cuda.matmul.allow_tf32 = orig_value  # noqa
+    else:
+        yield
 
 
 def coords_to_rel_coords(coords: Tensor) -> Tensor:
     """Map from coordinates coords[...,i] = x_i in R^k to relative coordinates
     rel_coords[...,i,j] = x_j-x_i in R^k
     """
-    return rearrange(coords, "... n c -> ... () n c") - \
-           rearrange(coords, "... n c -> ... n () c")  # noqa
+    return rearrange(coords, "... n c -> ... () n c") - rearrange(coords, "... n c -> ... n () c")  # noqa

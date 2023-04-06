@@ -18,12 +18,12 @@ class ProteinModel(nn.Module):
     """Base class for all protein learning models"""
 
     def __init__(
-            self,
-            model: nn.Module,
-            input_embedding: InputEmbedding,
-            node_dim_hidden: int,
-            pair_dim_hidden: int,
-            project_in: bool = True,
+        self,
+        model: nn.Module,
+        input_embedding: InputEmbedding,
+        node_dim_hidden: int,
+        pair_dim_hidden: int,
+        project_in: bool = True,
     ):
         super(ProteinModel, self).__init__()
         self.model = model
@@ -46,7 +46,7 @@ class ProteinModel(nn.Module):
         residue_feats, pair_feats = self.input_embedding(sample.input_features)
         if self.project_in:
             residue_feats = self.residue_project_in(residue_feats)
-            pair_feats = self.pair_project_in(pair_feats),
+            pair_feats = (self.pair_project_in(pair_feats),)
 
         fwd_kwargs = self.get_forward_kwargs(
             model_input=sample,
@@ -65,18 +65,20 @@ class ProteinModel(nn.Module):
 
     def set_model_parallel(self, device_indices: List):
         """first index is always device of input and feat embeddings"""
-        self.device_indices = device_indices
-        devices = list(map(lambda x: f"cuda:{x}", device_indices))
+        devices = ["cpu"]
+        if torch.cuda.is_available():
+            self.device_indices = device_indices
+            devices = list(map(lambda x: f"cuda:{x}", device_indices))
         self.secondary_device = devices[-1]
         self.main_device = devices[0]
 
     @abstractmethod
     def get_forward_kwargs(
-            self,
-            model_input: ModelInput,
-            residue_feats: Tensor,
-            pair_feats: Tensor,
-            **kwargs,
+        self,
+        model_input: ModelInput,
+        residue_feats: Tensor,
+        pair_feats: Tensor,
+        **kwargs,
     ) -> Dict:
         """Get keyword arguments for protein model forward pass
 

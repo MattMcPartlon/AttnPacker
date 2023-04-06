@@ -89,10 +89,10 @@ def get_dimer_spatial_crop(partition, coords: List[Tensor], crop_len, min_len: i
     s1 = scores.sum(dim=1)
     s1 = window_sum(torch.exp(sigma * s1 / torch.max(s1)), w=l1).numpy()
     c1 = np.random.choice(len(s1), p=s1 / np.sum(s1))
-    s2 = torch.sum(scores[c1:c1 + l1, :], dim=0)
+    s2 = torch.sum(scores[c1 : c1 + l1, :], dim=0)
     s2 = window_sum(torch.exp(sigma * s2 / torch.max(s2)), w=l2).numpy()
     c2 = np.random.choice(len(s2), p=s2 / np.sum(s2))
-    return [partition[0][c1:c1 + l1], partition[1][c2:c2 + l2]]
+    return [partition[0][c1 : c1 + l1], partition[1][c2 : c2 + l2]]
 
 
 def get_ab_ag_spatial_crop(ag_ab: Protein, crop_len: int):
@@ -109,7 +109,7 @@ def get_ab_ag_spatial_crop(ag_ab: Protein, crop_len: int):
     scores = np.maximum(1, scores) * (len(scores) ** (-1 / 2))
     scores = np.exp(scores)
     c2 = np.random.choice(len(scores), p=scores / np.sum(scores))
-    return [ag_ab.chain_indices[0], ag_ab.chain_indices[1][c2:c2 + ag_cropped_size]]
+    return [ag_ab.chain_indices[0], ag_ab.chain_indices[1][c2 : c2 + ag_cropped_size]]
 
 
 def is_homodimer(chain_1: Protein, chain_2: Protein, tol=2) -> bool:
@@ -120,12 +120,16 @@ def is_homodimer(chain_1: Protein, chain_2: Protein, tol=2) -> bool:
 
 def get_tm(a: Protein, b: Protein) -> float:
     mask = a.valid_residue_mask & b.valid_residue_mask
-    return -TMLoss().forward(
-        a["CA"][mask].clone().unsqueeze(0),
-        b["CA"][mask].clone().unsqueeze(0),
-        align=True,
-        reduce=True,
-    ).item()
+    return (
+        -TMLoss()
+        .forward(
+            a["CA"][mask].clone().unsqueeze(0),
+            b["CA"][mask].clone().unsqueeze(0),
+            align=True,
+            reduce=True,
+        )
+        .item()
+    )
 
 
 def get_rmsd(a: Protein, b: Protein) -> float:

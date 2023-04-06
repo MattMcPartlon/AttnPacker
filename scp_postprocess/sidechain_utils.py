@@ -10,10 +10,12 @@ import scp_postprocess.protein_constants as pc
 from torchtyping import TensorType, patch_typeguard
 from typeguard import typechecked
 from torch.cuda.amp import autocast
+
 cos_max, cos_min = (1 - 1e-9), -(1 - 1e-9)
 min_norm_clamp = 1e-9
 
 patch_typeguard()
+
 
 def signed_dihedral_4(
     ps: Union[Tensor, List[Tensor]],
@@ -48,10 +50,11 @@ def signed_dihedral_4(
         res = torch.cat((y.unsqueeze(-1), x.unsqueeze(-1)), dim=-1)
     return res if not return_mask else (res, mask)
 
+
 @typechecked
 def chi_mask_n_indices(
-    seq: TensorType["batch","seq"],
-    atom_mask: TensorType["batch","seq",37],
+    seq: TensorType["batch", "seq"],
+    atom_mask: TensorType["batch", "seq", 37],
 ) -> Tuple[Tensor, Tensor]:
     """Gets chi-dihedral mask and atom indices"""
     # print("[chi_mask_n_indices] Start")
@@ -72,9 +75,9 @@ def chi_mask_n_indices(
 
 
 def get_sc_dihedral(
-    coords: TensorType["batch","seq",37,3],
-    chi_mask: TensorType["batch","seq",4],
-    chi_indices: TensorType["batch","seq",4,4],
+    coords: TensorType["batch", "seq", 37, 3],
+    chi_mask: TensorType["batch", "seq", 4],
+    chi_indices: TensorType["batch", "seq", 4, 4],
     return_unit_vec: bool = True,
 ) -> Tensor:
     """Get side-chain dihedral angles"""
@@ -100,39 +103,40 @@ def get_sc_dihedral(
 # data entries -> (pdb, res_ty, res_idx, rmsd, num_neighbors, chis)
 @typechecked
 def _per_residue_rmsd(
-    predicted: TensorType["batch","seq","atoms",3],
-    native: TensorType["batch","seq","atoms",3],
-    mask: TensorType["batch","seq","atoms"],
-    fn=lambda x: torch.square(x), 
-    reduce=False
-    ):
+    predicted: TensorType["batch", "seq", "atoms", 3],
+    native: TensorType["batch", "seq", "atoms", 3],
+    mask: TensorType["batch", "seq", "atoms"],
+    fn=lambda x: torch.square(x),
+    reduce=False,
+):
     tmp = torch.sum(fn(predicted - native), dim=-1)
     if not reduce:
         return masked_mean(tmp, mask, dim=-1)
     else:
         return torch.sum(masked_mean(tmp, mask, dim=-1)) / max(1, torch.sum(mask.any(dim=-1)))
 
+
 @typechecked
 def swap_symmetric_atoms(
-    atom_coords: TensorType["batch","seq","atoms",3], 
-    seq_encoding: TensorType["batch","seq"]
-    ) -> TensorType["batch","seq","atoms",3]:
+    atom_coords: TensorType["batch", "seq", "atoms", 3], seq_encoding: TensorType["batch", "seq"]
+) -> TensorType["batch", "seq", "atoms", 3]:
     """swap symmetric side chain atom coordinates"""
     left_mask = pc.RES_TO_LEFT_SYMM_SC_ATOM_MASK.to(seq_encoding.device)
     right_mask = pc.RES_TO_RIGHT_SYMM_SC_ATOM_MASK.to(seq_encoding.device)
     left_mask, right_mask = left_mask[seq_encoding], right_mask[seq_encoding]
     swapped_coords = atom_coords.detach().clone()
-    assert left_mask.shape == (*atom_coords.shape[:3],2)
+    assert left_mask.shape == (*atom_coords.shape[:3], 2)
     for i in range(left_mask.shape[-1]):
-        swapped_coords[left_mask[...,i]] = atom_coords[right_mask[...,i]]
-        swapped_coords[right_mask[...,i]] = atom_coords[left_mask[...,i]]
+        swapped_coords[left_mask[..., i]] = atom_coords[right_mask[..., i]]
+        swapped_coords[right_mask[..., i]] = atom_coords[left_mask[..., i]]
     return swapped_coords
 
+
 def align_symmetric_sidechains(
-    native_coords:TensorType["batch","seq",37,3],
-    predicted_coords:TensorType["batch","seq",37,3],
-    atom_mask:TensorType["batch","seq",37],
-    native_seq:TensorType["batch","seq"],
+    native_coords: TensorType["batch", "seq", 37, 3],
+    predicted_coords: TensorType["batch", "seq", 37, 3],
+    atom_mask: TensorType["batch", "seq", 37],
+    native_seq: TensorType["batch", "seq"],
 ):
     """Align side chain atom coordinates"""
     assert native_coords.shape == predicted_coords.shape
@@ -146,5 +150,3 @@ def align_symmetric_sidechains(
         assert swap_mask.ndim == 2
         native_coords[swap_mask] = swapped_native[swap_mask]
         return native_coords
-
-
