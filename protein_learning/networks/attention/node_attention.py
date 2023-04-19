@@ -6,7 +6,6 @@ import torch.nn.functional as F  # noqa
 from einops import rearrange, repeat  # noqa
 from einops.layers.torch import Rearrange  # noqa
 from torch import nn, einsum, Tensor
-from torch.cuda.amp import autocast
 from protein_learning.common.rigids import Rigids
 from protein_learning.networks.common.net_utils import (
     exists,
@@ -26,20 +25,20 @@ class NodeAttention(nn.Module):  # noqa
     """Scalar Feature masked attention with pair bias and gating"""
 
     def __init__(
-            self,
-            node_dim: int,
-            dim_head: int = 32,
-            heads: int = 8,
-            pair_dim: Optional[int] = None,
-            bias: bool = False,
-            dim_out: Optional[int] = None,
-            **kawrgs  # noqa
+        self,
+        node_dim: int,
+        dim_head: int = 32,
+        heads: int = 8,
+        pair_dim: Optional[int] = None,
+        bias: bool = False,
+        dim_out: Optional[int] = None,
+        **kawrgs,  # noqa
     ):
         """dim"""
         super().__init__()
         inner_dim = dim_head * heads
         self.node_dim, self.pair_dim = node_dim, pair_dim
-        self.heads, self.scale = heads, dim_head ** -0.5
+        self.heads, self.scale = heads, dim_head**-0.5
         self.to_qkv = nn.Linear(node_dim, inner_dim * 3, bias=bias)
         self.to_g = nn.Linear(node_dim, inner_dim)
         self.to_out_node = nn.Linear(inner_dim, default(dim_out, node_dim))
@@ -52,10 +51,10 @@ class NodeAttention(nn.Module):  # noqa
         self.bias_softmax, self.sigmoid_gate = Fuser().bias_softmax, Fuser().sigmoid_gate
 
     def forward(
-            self,
-            node_feats: Tensor,
-            pair_feats: Optional[Tensor],
-            mask: Optional[Tensor],
+        self,
+        node_feats: Tensor,
+        pair_feats: Optional[Tensor],
+        mask: Optional[Tensor],
     ) -> Tensor:
         """Multi-head scalar Attention Layer
 
@@ -69,21 +68,20 @@ class NodeAttention(nn.Module):  # noqa
         pair_feats = self.pair_norm(pair_feats) if exists(pair_feats) else None
         q, k, v = self.to_qkv(node_feats).chunk(3, dim=-1)
         g = self.to_g(node_feats)
-        b = rearrange(self.to_bias(pair_feats), 'b ... h -> b h ...') \
-            if exists(pair_feats) else 0
-        q, k, v, g = map(lambda t: rearrange(t, 'b ... (h d) -> b h ... d', h=h), (q, k, v, g))
+        b = rearrange(self.to_bias(pair_feats), "b ... h -> b h ...") if exists(pair_feats) else 0
+        q, k, v, g = map(lambda t: rearrange(t, "b ... (h d) -> b h ... d", h=h), (q, k, v, g))
         attn_feats = self._attn(q, k, v, b, mask)
-        attn_feats = rearrange(self.sigmoid_gate(attn_feats, gate=g), 'b h n d -> b n (h d)', h=h)
+        attn_feats = rearrange(self.sigmoid_gate(attn_feats, gate=g), "b h n d -> b n (h d)", h=h)
         return self.to_out_node(attn_feats)
 
     def _attn(self, q, k, v, b, mask: Optional[Tensor]) -> Tensor:
         """Perform attention update"""
-        sim = einsum('b h i d, b h j d -> b h i j', q, k) * self.scale
+        sim = einsum("b h i d, b h j d -> b h i j", q, k) * self.scale
         if exists(mask):
             mask = rearrange(mask, "b i j -> b () i j")
             sim = sim.masked_fill(~mask, max_neg_value(sim))
         attn = self.bias_softmax(sim, bias=b)
-        return einsum('b h i j, b h j d -> b h i d', attn, v)
+        return einsum("b h i j, b h j d -> b h i d", attn, v)
 
 
 def dist_attn(q: Tensor, k: Tensor) -> Tensor:
@@ -102,30 +100,28 @@ class IPA(nn.Module):  # noqa
     """Invariant Point Attention"""
 
     def __init__(
-            self,
-            node_dim: int,
-            pair_dim: Optional[int] = None,
-            heads: int = 12,
-            dim_query: int = 16,
-            dim_query_point: int = 4,
-            dim_value: int = 16,
-            dim_value_point: int = 8,
-            use_dist_attn: bool = True,
-            dim_out: Optional[int] = None,
-            **kwargs,  # noqa
+        self,
+        node_dim: int,
+        pair_dim: Optional[int] = None,
+        heads: int = 12,
+        dim_query: int = 16,
+        dim_query_point: int = 4,
+        dim_value: int = 16,
+        dim_value_point: int = 8,
+        use_dist_attn: bool = True,
+        dim_out: Optional[int] = None,
+        **kwargs,  # noqa
     ):
         super().__init__()
         self.heads = heads
 
         # point and scalar attention weights
         # head weights for points
-        self.point_weights = nn.Parameter(
-            torch.log(torch.exp(torch.ones(1, heads, 1, 1)) - 1.)
-        )
+        self.point_weights = nn.Parameter(torch.log(torch.exp(torch.ones(1, heads, 1, 1)) - 1.0))
         scale = 3 if exists(pair_dim) else 2
-        self.point_attn_logits_scale = ((scale * dim_query_point) * (9 * (2 ** 0.5))) ** -0.5
+        self.point_attn_logits_scale = ((scale * dim_query_point) * (9 * (2**0.5))) ** -0.5
         self.scalar_attn_logits_scale = (scale * dim_query) ** -0.5
-        self.pair_attn_logits_scale = 3 ** -0.5
+        self.pair_attn_logits_scale = 3**-0.5
 
         # pair related nets
         if exists(pair_dim):
@@ -135,8 +131,12 @@ class IPA(nn.Module):  # noqa
             self.pair_bias, self.pair_norm = None, None
 
         # set up q,k,v nets for scalar and point features
-        sizes = [heads * dim_query] * 2 + [heads * dim_value] \
-                + [heads * dim_query_point * 3] * 2 + [heads * dim_value_point * 3]  # noqa
+        sizes = (
+            [heads * dim_query] * 2
+            + [heads * dim_value]
+            + [heads * dim_query_point * 3] * 2
+            + [heads * dim_value_point * 3]
+        )  # noqa
         self.to_qkv = SplitLinear(
             dim_in=node_dim,
             dim_out=sum(sizes),
@@ -156,11 +156,11 @@ class IPA(nn.Module):  # noqa
         self.safe_norm = Fuser().safe_norm
 
     def forward(
-            self,
-            node_feats: Tensor,
-            rigids: Rigids,
-            pair_feats: Optional[Tensor],
-            mask: Optional[Tensor] = None,
+        self,
+        node_feats: Tensor,
+        rigids: Rigids,
+        pair_feats: Optional[Tensor],
+        mask: Optional[Tensor] = None,
     ):
         """Invariant Point Attention"""
         assert exists(self.to_pair_bias) or not exists(pair_feats)
@@ -169,8 +169,7 @@ class IPA(nn.Module):  # noqa
 
         # map pair feats to bias and rearrange
         pair_feats = self.pair_norm(pair_feats) if exists(pair_feats) else None
-        pair_bias = self.rearrange_heads(self.to_pair_bias(pair_feats)).squeeze(-1) \
-            if exists(pair_feats) else 0
+        pair_bias = self.rearrange_heads(self.to_pair_bias(pair_feats)).squeeze(-1) if exists(pair_feats) else 0
 
         # queries, keys and values for scalar and point features.
         q_scalar, k_scalar, v_scalar, q_point, k_point, v_point = self.to_qkv(node_feats)
@@ -181,7 +180,7 @@ class IPA(nn.Module):  # noqa
         )  # shapes (b i (h d)) -> (b h i d)
 
         # Scalar attn logits
-        scalar_attn_logits = einsum('b h i d, b h j d -> b h i j', q_scalar, k_scalar)
+        scalar_attn_logits = einsum("b h i d, b h j d -> b h i j", q_scalar, k_scalar)
 
         # Derive attention for point features
         # Add trailing dimension (3) to point features.
@@ -190,8 +189,9 @@ class IPA(nn.Module):  # noqa
         # Place points in global frame
         q_point, k_point, v_point = map(lambda x: rigids.apply(x), (q_point, k_point, v_point))
         # Add head dimension
-        q_point, k_point, v_point = map(lambda x: rearrange(x, "b i (h d) c -> b h i d c", h=h),
-                                        (q_point, k_point, v_point))
+        q_point, k_point, v_point = map(
+            lambda x: rearrange(x, "b i (h d) c -> b h i d c", h=h), (q_point, k_point, v_point)
+        )
 
         # derive attn logits for point attention
         point_weights = F.softplus(self.point_weights)
@@ -202,23 +202,28 @@ class IPA(nn.Module):  # noqa
             mask, point_attn_logits, scalar_attn_logits, pair_bias
         )
 
-        w1, x1, w2, x2, w3, x3 = self.scalar_attn_logits_scale, scalar_attn_logits, \
-                                 self.point_attn_logits_scale, point_attn_logits, \
-                                 self.pair_attn_logits_scale, pair_bias
+        w1, x1, w2, x2, w3, x3 = (
+            self.scalar_attn_logits_scale,
+            scalar_attn_logits,
+            self.point_attn_logits_scale,
+            point_attn_logits,
+            self.pair_attn_logits_scale,
+            pair_bias,
+        )
 
         # weight and combine attn logits
         attn_logits = self.weight_n_add(x1, x2, x3, w1, w2, w3)
 
         # compute attention weights
-        attn = attn_logits.softmax(dim=- 1)  # noqa
+        attn = attn_logits.softmax(dim=-1)  # noqa
 
         # compute attention features for scalar, coord, pair
-        with disable_tf32(), autocast(enabled=False):
+        device_type = "cpu" if attn.device.type == "cpu" else "cuda"
+        with disable_tf32(), torch.autocast(device_type=device_type, enabled=False):
             # disable TF32 for precision and aggregate values
-            results_scalar = einsum('b h i j, b h j d -> b h i d', attn, v_scalar)
-            results_pairwise = einsum('b h i j, b i j d -> b h i d', attn, pair_feats) \
-                if exists(pair_feats) else None
-            results_points = einsum('b h i j, b h j d c -> b h i d c', attn, v_point)
+            results_scalar = einsum("b h i j, b h j d -> b h i d", attn, v_scalar)
+            results_pairwise = einsum("b h i j, b i j d -> b h i d", attn, pair_feats) if exists(pair_feats) else None
+            results_points = einsum("b h i j, b h j d c -> b h i d c", attn, v_point)
             # map back to local frames
             results_points = rigids.apply_inverse(rearrange(results_points, "b h i d c -> b i (h d) c"))
             results_points = rearrange(results_points, "b i (h d) c -> b h i d c", h=h)
@@ -227,8 +232,10 @@ class IPA(nn.Module):  # noqa
 
         # merge back heads
         results = [results_scalar, results_points, results_points_norm]
-        results = map(lambda x: rearrange(x, "b h ... d -> b ... (h d)"),
-                      results + [results_pairwise] if exists(pair_feats) else results)
+        results = map(
+            lambda x: rearrange(x, "b h ... d -> b ... (h d)"),
+            results + [results_pairwise] if exists(pair_feats) else results,
+        )
 
         # concat results and project out
         return self.to_scalar_out(torch.cat([x for x in results], dim=-1))
@@ -237,7 +244,7 @@ class IPA(nn.Module):  # noqa
         """Masks attention logits"""
         if not exists(mask):
             return logits if len(logits) > 1 else logits[0]
-        mask = rearrange(mask, 'b i j -> b () i j')
+        mask = rearrange(mask, "b i j -> b () i j")
         fill = lambda x: x.masked_fill(~mask, get_min_val(x)) if torch.is_tensor(x) else x
         out = [fill(mat) for mat in logits]
         return out if len(out) > 1 else out[0]
@@ -254,14 +261,14 @@ class NodeUpdateBlock(nn.Module):  # noqa
     """
 
     def __init__(
-            self,
-            node_dim: int,
-            pair_dim: Optional[int] = None,
-            ff_mult: int = None,
-            use_ipa: bool = True,
-            dropout: float = 0,
-            dim_out: Optional[int] = None,
-            **net_kwargs,
+        self,
+        node_dim: int,
+        pair_dim: Optional[int] = None,
+        ff_mult: int = None,
+        use_ipa: bool = True,
+        dropout: float = 0,
+        dim_out: Optional[int] = None,
+        **net_kwargs,
     ):
         super().__init__()
         kls = IPA if use_ipa else NodeAttention
@@ -274,16 +281,16 @@ class NodeUpdateBlock(nn.Module):  # noqa
         self.transn_dropout = nn.Dropout(dropout) if (dropout > 0 and use_ipa) else nn.Identity()
 
     def forward(
-            self,
-            node_feats: Tensor,
-            pair_feats: Optional[Tensor],
-            mask: Optional[Tensor] = None,
-            rigids: Optional[Rigids] = None,
+        self,
+        node_feats: Tensor,
+        pair_feats: Optional[Tensor],
+        mask: Optional[Tensor] = None,
+        rigids: Optional[Rigids] = None,
     ) -> Tensor:
         """Perform Scalar Updates"""
         forward_kwargs = dict(node_feats=node_feats, pair_feats=pair_feats, mask=mask)
         if self.use_ipa:
-            forward_kwargs['rigids'] = rigids
+            forward_kwargs["rigids"] = rigids
         attn_feats = self.attn(**forward_kwargs)
         attn_feats = self.attn_dropout(attn_feats)
         node_feats = self.attn_residual(attn_feats, node_feats)

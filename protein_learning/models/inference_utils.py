@@ -121,7 +121,7 @@ def format_prediction(model, model_in, model_out, device="cpu"):
     pred_plddt = pred_plddt
 
     # Predicted Sequence
-    if "nsr" in model.loss_fn and torch.any(seq_mask):
+    if "nsr" in model.loss_fn:
         pred_seq_logits = model.loss_fn.loss_fns["nsr"].get_predicted_logits(res_feats)
         pred_seq_labels = torch.argmax(pred_seq_logits, dim=-1)
 
@@ -241,6 +241,8 @@ NAME_TO_BASIS_CACHE = {
     "fbb_design_21_12_2022_16:00:06": os.path.join(BASIS_PATH, ".basis_cache", "rx7"),  # rx7 - 1
     "fbb_design_21_12_2022_16:07:51": os.path.join(BASIS_PATH, ".basis_cache", "rx7"),  # rx7 - 2
     "fbb_design_21_12_2022_15:57:43": os.path.join(BASIS_PATH, ".basis_cache", "rx11"),  # rx11
+    "fbb_design_05_04_2023_17:56:21": os.path.join(BASIS_PATH, ".basis_cache", "rx7"),  # +rot conditioning, noise 0.05
+    "fbb_design_05_04_2023_17:56:52": os.path.join(BASIS_PATH, ".basis_cache", "rx7"),  # +rot conditioning
 }
 
 
@@ -249,12 +251,18 @@ class Inference:
         self,
         model_n_config_root: str,
         use_design_variant: bool = False,
+        use_rotamer_conditioning: bool = False,
     ):
         self.model = None
-        if use_design_variant:
-            self.model_name = "fbb_design_21_12_2022_16:07:51"
+        if not use_rotamer_conditioning:
+            if use_design_variant:
+                self.model_name = "fbb_design_21_12_2022_16:07:51"
+            else:
+                self.model_name = "fbb_design_21_12_2022_15:57:43"
         else:
-            self.model_name = "fbb_design_21_12_2022_15:57:43"
+            # Note: can swap with fbb_design_05_04_2023_17:56:21, which was trained with
+            # backbone Gaussian noise
+            self.model_name = "fbb_design_05_04_2023_17:56:52"
         self.trainer = SCPTrain()
         self.resource_root = model_n_config_root
         self.load_inference_args()
@@ -331,7 +339,7 @@ class Inference:
         self._init_model()
         return self.model
 
-    def load_example(self, pdb_path, fasta_path=None, design_mask=None, protein=None):
+    def load_example(self, pdb_path, fasta_path=None, seq_mask=None, dihedral_mask=None, protein=None):
         protein = (
             Protein.FromPDBAndSeq(
                 pdb_path=pdb_path,
@@ -353,7 +361,8 @@ class Inference:
             input_features=self.feat_gen.generate_features(
                 protein,
                 extra=extra,
-                seq_mask=design_mask,
+                seq_mask=seq_mask,
+                dihedral_mask=dihedral_mask,
             ),
             extra=extra,
         ).to(self.device)
@@ -366,10 +375,10 @@ class Inference:
     def device(self):
         return next(self.model.parameters()).device
 
-    def infer(self, pdb_path, fasta_path=None, design_mask=None, format=True, chunk_size: int = 1e9):
+    def infer(self, pdb_path, fasta_path=None, seq_mask=None, dihedral_mask=None, format=True, chunk_size: int = 1e9):
         model = self.get_model()
         with torch.no_grad():
-            model_input = self.load_example(pdb_path, fasta_path, design_mask)
+            model_input = self.load_example(pdb_path, fasta_path, seq_mask=seq_mask, dihedral_mask=dihedral_mask)
             if len(model_input.decoy) <= chunk_size:
                 model_output = model(model_input, use_cycles=1)
             else:

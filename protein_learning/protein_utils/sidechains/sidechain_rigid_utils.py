@@ -14,7 +14,6 @@ from torch import nn
 from typing import Dict
 import protein_learning.common.protein_constants as pc
 from protein_learning.common.helpers import disable_tf32
-from torch.cuda.amp import autocast
 from typing import Dict
 from torchtyping import TensorType, patch_typeguard
 from typeguard import typechecked
@@ -328,7 +327,8 @@ def atom37_to_torsion_angles(
         "(prefix)torsion_angles_mask" ([*, N_res, 7])
             Torsion angles mask
     """
-    with disable_tf32(), autocast(enabled=False):
+    device = "cpu" if protein[prefix + "aatype"].device.type == "cpu" else "cuda"
+    with disable_tf32(), torch.autocast(device_type=device, enabled=False):
         N, CA, C, O = [pc.ALL_ATOM_POSNS[x] for x in "N,CA,C,O".split(",")]
         aatype = protein[prefix + "aatype"]
         assert torch.max(aatype) < 20, f"{torch.max(aatype)}"

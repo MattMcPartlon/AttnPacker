@@ -18,6 +18,7 @@ from scp_postprocess.sidechain_rigid_utils import (
     restype_atom37_rigid_group_positions,
 )
 
+
 def masked_mean(mask, value, dim, eps=1e-4):
     mask = mask.expand(*value.shape)
     return torch.sum(mask * value, dim=dim) / (eps + torch.sum(mask, dim=dim))
@@ -233,11 +234,11 @@ class FACoordModule(nn.Module):
     @typechecked
     def forward(
         self,
-        residue_feats: Optional[TensorType["batch","seq","hidden"]],
-        seq_encoding: TensorType["batch","seq"],
-        coords: Optional[TensorType["batch","seq","atoms",3]],
+        residue_feats: Optional[TensorType["batch", "seq", "hidden"]],
+        seq_encoding: TensorType["batch", "seq"],
+        coords: Optional[TensorType["batch", "seq", "atoms", 3]],
         rigids: Optional[Rigid],
-        angles: Optional[TensorType["batch","seq","no_angles",2]] = None,
+        angles: Optional[TensorType["batch", "seq", "no_angles", 2]] = None,
     ) -> Dict[str, Tensor]:
         # NOTE: rigids expected to be scaled (unit==angstrom)
         # AND stop grad on rigid rotation should be called *after* this forward pass
@@ -247,7 +248,7 @@ class FACoordModule(nn.Module):
         if exists(coords):
             assert coords.ndim == 4, f"{coords.shape}"
 
-        seq_encoding = torch.clamp_max(seq_encoding.clone(),20)
+        seq_encoding = torch.clamp_max(seq_encoding.clone(), 20)
 
         if not exists(rigids):
             N, CA, C, *_ = coords.unbind(dim=-2)
@@ -270,11 +271,11 @@ class FACoordModule(nn.Module):
             all_rigids,
             seq_encoding,
         )
-        if self.replace_bb: #replace backbone coordinates with ground truth
-            all_coords[...,:4,:] = coords[...,:4,:]
+        if self.replace_bb:  # replace backbone coordinates with ground truth
+            all_coords[..., :4, :] = coords[..., :4, :]
         preds = {
-            #"frames": rigids.to_tensor_7(),
-            #"sidechain_frames": all_rigids.to_tensor_4x4(),
+            # "frames": rigids.to_tensor_7(),
+            # "sidechain_frames": all_rigids.to_tensor_4x4(),
             "unnormalized_angles": unnormalized_angles,
             "angles": angles,
             "positions": all_coords,

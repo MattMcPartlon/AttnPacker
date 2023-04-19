@@ -228,7 +228,7 @@ AA_TO_SC_ATOMS = {
     "ASN": ["CB", "CG", "ND2", "OD1"],
     "PHE": ["CB", "CD1", "CD2", "CE1", "CE2", "CG", "CZ"],
     "GLY": [],
-}   
+}
 AA_TO_SC_ATOMS = update_letters(AA_TO_SC_ATOMS)
 
 HBOND_DONORS = "OG OG1 NE2 ND1 ND2 NZ NE NH1 NH2 NE1 OH N".split()
@@ -242,10 +242,8 @@ for atom in HBOND_ACCEPTORS:
     HBOND_ACCEPTOR_TENSOR[ALL_ATOM_POSNS[atom]] = 1
 
 
-
-#HBOND_DONORS = [("SER","OG"),("THR","OG1"),("GLN","NE2"),("HIS","ND1"),("HIS","NE2"),("LYS","NZ"),("ARG","NE"),("ARG","NH1"),("ARG","NH2"),("TRP","NE1"),("TYR","OH")]
-#HBOND_ACCEPTORS = [("SER","OG"),("THR","OG1"),("GLU","OE1"),("GLU","OE2"),("ASP","OD1"),("ASP","OD2"),("GLN","OE1"),("HIS","ND1"),("HIS","NE2"),("TYR","OH"),("ASN","OD2")]
-
+# HBOND_DONORS = [("SER","OG"),("THR","OG1"),("GLN","NE2"),("HIS","ND1"),("HIS","NE2"),("LYS","NZ"),("ARG","NE"),("ARG","NH1"),("ARG","NH2"),("TRP","NE1"),("TYR","OH")]
+# HBOND_ACCEPTORS = [("SER","OG"),("THR","OG1"),("GLU","OE1"),("GLU","OE2"),("ASP","OD1"),("ASP","OD2"),("GLN","OE1"),("HIS","ND1"),("HIS","NE2"),("TYR","OH"),("ASN","OD2")]
 
 
 to_posns = lambda chi: {THREE_TO_ONE[res]: [ALL_ATOM_POSNS[atom] for atom in chi[res]] for res in chi}
@@ -362,13 +360,11 @@ RES_TY_TO_CHI_GROUP_ATOMS = {
 RES_TY_TO_CHI_GROUP_ATOMS = update_letters(RES_TY_TO_CHI_GROUP_ATOMS)
 
 RES_TY_TO_ALL_CHI_MASK_TENSOR = torch.zeros(len(RES_TYPES), 37)
-for i,aa in enumerate(RES_TYPES):
+for i, aa in enumerate(RES_TYPES):
     for group in RES_TY_TO_CHI_GROUP_ATOMS[aa]:
         for atom in group:
-            RES_TY_TO_ALL_CHI_MASK_TENSOR[i,ALL_ATOM_POSNS[atom]] = 1
+            RES_TY_TO_ALL_CHI_MASK_TENSOR[i, ALL_ATOM_POSNS[atom]] = 1
 
-
-        
 
 CHI_PI_PERIODIC = {
     "ALA": [0.0, 0.0, 0.0, 0.0],

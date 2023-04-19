@@ -5,7 +5,6 @@ from typing import Tuple, Union, List
 cos_max, cos_min = (1 - 1e-9), -(1 - 1e-9)
 min_norm_clamp = 1e-9
 from protein_learning.common.helpers import disable_tf32
-from torch.cuda.amp import autocast
 
 
 def signed_dihedral_4(
@@ -25,8 +24,9 @@ def signed_dihedral_4(
     :returns : list of dihedral angles
     """
     # switch to higher precision dtype
-    with disable_tf32(), autocast(enabled=False):
-        p0, p1, p2, p3 = ps
+    p0, p1, p2, p3 = ps
+    device_type = "cpu" if p0.device.type == "cpu" else "cuda"
+    with disable_tf32(), torch.autocast(device_type=device_type, enabled=False):
         b0, b1, b2 = p0 - p1, p2 - p1, p3 - p2
         mask = torch.norm(b1, dim=-1) > 1e-7
         b1 = torch.clamp_min(b1, 1e-6)
@@ -48,7 +48,8 @@ def signed_dihedral_all_12(ps: List[Tensor]) -> Tensor:
     :param ps:
     :return:
     """
-    with disable_tf32(), autocast(enabled=False):
+    device_type = "cpu" if ps[0].device.type == "cpu" else "cuda"
+    with disable_tf32(), torch.autocast(device_type=device_type, enabled=False):
         p0, p1, p2, p3 = ps
         b0, b1, b2 = p0 - p1, p2.unsqueeze(-3) - p1.unsqueeze(-2), p3 - p2
         b1 = b1 / torch.norm(b1, dim=-1, keepdim=True).clamp_min(min_norm_clamp)
@@ -65,7 +66,8 @@ def signed_dihedral_all_123(ps) -> Tensor:
     :param ps:
     :return:
     """
-    with disable_tf32(), autocast(enabled=False):
+    device_type = "cpu" if ps[0].device.type == "cpu" else "cuda"
+    with disable_tf32(), torch.autocast(device_type=device_type, enabled=False):
         p0, p1, p2, p3 = ps
         b0, b1, b2 = p0 - p1, p2 - p1, p3.unsqueeze(-3) - p2.unsqueeze(-2)
         b1 = b1 / torch.norm(b1, dim=-1, keepdim=True).clamp_min(min_norm_clamp)
@@ -83,7 +85,8 @@ def unsigned_angle_all(ps: List[Tensor]) -> Tensor:
     returns: a matrix M where M[i,j] is the angle btwn the lines formed
     by ps0[i],ps1[i] and ps[1,i],ps[2,j].
     """
-    with disable_tf32(), autocast(enabled=False):
+    device_type = "cpu" if ps[0].device.type == "cpu" else "cuda"
+    with disable_tf32(), torch.autocast(device_type=device_type, enabled=False):
         p0, p1, p2 = ps[0], ps[1], ps[2]
         b01, b12 = p0 - p1, p2.unsqueeze(-3) - p1.unsqueeze(-2)
         M = b01.unsqueeze(-2) * b12

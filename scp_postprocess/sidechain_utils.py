@@ -17,40 +17,6 @@ min_norm_clamp = 1e-9
 patch_typeguard()
 
 
-def signed_dihedral_4(
-    ps: Union[Tensor, List[Tensor]],
-    return_mask=False,
-    return_unit_vec: bool = False,
-) -> Union[Tensor, Tuple[Tensor, Tensor]]:
-    """computes (signed) dihedral angle of input points.
-
-     works for batched and unbatched point lists
-
-    :param ps: a list of four tensors of points. dihedral angle between
-    ps[0,i],ps[1,i],ps[2,i], and ps[3,i] will be ith entry of output.
-    :param return_mask: whether to return a mask indicating where dihedral
-    computation may have had precision errors.
-
-    :returns : list of dihedral angles
-    """
-    # switch to higher precision dtype
-    with disable_tf32(), autocast(enabled=False):
-        p0, p1, p2, p3 = ps
-        b0, b1, b2 = p0 - p1, p2 - p1, p3 - p2
-        mask = torch.norm(b1, dim=-1) > 1e-7
-        b1 = torch.clamp_min(b1, 1e-6)
-        b1 = b1 / torch.norm(b1, dim=-1, keepdim=True)
-        v = b0 - torch.sum(b0 * b1, dim=-1, keepdim=True) * b1
-        w = b2 - torch.sum(b2 * b1, dim=-1, keepdim=True) * b1
-        x = torch.sum(v * w, dim=-1)
-        y = torch.sum(torch.cross(b1, v) * w, dim=-1)
-    if not return_unit_vec:
-        res = torch.atan2(y, x)
-    else:
-        res = torch.cat((y.unsqueeze(-1), x.unsqueeze(-1)), dim=-1)
-    return res if not return_mask else (res, mask)
-
-
 @typechecked
 def chi_mask_n_indices(
     seq: TensorType["batch", "seq"],
@@ -76,11 +42,14 @@ def chi_mask_n_indices(
 
 def get_sc_dihedral(
     coords: TensorType["batch", "seq", 37, 3],
-    chi_mask: TensorType["batch", "seq", 4],
-    chi_indices: TensorType["batch", "seq", 4, 4],
-    return_unit_vec: bool = True,
+    seq: TensorType["batch", "seq"],
+    atom_mask: TensorType["batch", "seq", 37],
+    return_unit_vec: bool = False,
+    return_mask: bool = False,
 ) -> Tensor:
     """Get side-chain dihedral angles"""
+    # print("[get_sc_dihedral] Start")
+    chi_mask, chi_indices = chi_mask_n_indices(seq, atom_mask)
     reshape_chi_mask = rearrange(chi_mask, "n g -> g n")  # nx4 -> 4xn
     assert reshape_chi_mask.shape[0] == 4, f"{reshape_chi_mask.shape}"
     reshaped_indices = rearrange(chi_indices, "n g a -> g n a")
@@ -96,8 +65,11 @@ def get_sc_dihedral(
         ps=rearrange(select_coords, "b n a c -> a b n c"),
         return_unit_vec=return_unit_vec,
     )
+    # shape is [b*n_dihedral,n,(1 or 2)]
     dihedrals = rearrange(dihedrals, "(b g) n d -> b n g d", g=chi_mask.shape[-1])
-    return dihedrals
+    # #print("     dihedral shape:", dihedrals.shape)
+    # #print("[get_sc_dihedral] End")
+    return dihedrals, chi_mask if return_mask else dihedrals
 
 
 # data entries -> (pdb, res_ty, res_idx, rmsd, num_neighbors, chis)
@@ -132,21 +104,39 @@ def swap_symmetric_atoms(
     return swapped_coords
 
 
+def ca_rmsd(x: TensorType["batch", "seq", 37, 3], y: TensorType["batch", "seq", 37, 3]):
+    ca_x, ca_y = map(lambda c: c[..., 1, :], (x, y))
+    eps = torch.randn_like(ca_x) * 1e-8
+    return torch.sqrt(torch.mean(torch.sum(torch.square(ca_x - (ca_y + eps)), dim=-1)))
+
+
 def align_symmetric_sidechains(
     native_coords: TensorType["batch", "seq", 37, 3],
     predicted_coords: TensorType["batch", "seq", 37, 3],
     atom_mask: TensorType["batch", "seq", 37],
     native_seq: TensorType["batch", "seq"],
+    align_tol: float = 0.25,
 ):
     """Align side chain atom coordinates"""
-    assert native_coords.shape == predicted_coords.shape
+    assert native_coords.shape == predicted_coords.shape, f"{native_coords.shape},{predicted_coords.shape}"
     assert native_coords.shape[-2] == 37 == atom_mask.shape[-1]
+
+    aligned_native, aligned_pred = native_coords.detach().clone(), predicted_coords.detach().clone()
+    target_frames = SimpleRigids.IdentityRigid(aligned_native.shape[:2], aligned_native.device)
+    bb_rmsd = ca_rmsd(native_coords, predicted_coords)
+    if bb_rmsd > align_tol:
+        target_frames, frames = map(
+            lambda x: SimpleRigids.RigidFromBackbone(x[..., :3, :]), (aligned_native, aligned_pred)
+        )
+        aligned_native = target_frames.apply_inverse(aligned_native)
+        aligned_pred = frames.apply_inverse(aligned_pred)
+
     with torch.no_grad():
-        initial_rmsds = _per_residue_rmsd(predicted_coords, native_coords, atom_mask)
+        initial_rmsds = _per_residue_rmsd(aligned_pred, aligned_native, atom_mask)
         # swap atoms in symmetric sidechains and get swapped rmsds
-        swapped_native = swap_symmetric_atoms(native_coords, native_seq)
-        swapped_rmsds = _per_residue_rmsd(predicted_coords, swapped_native, atom_mask)
+        swapped_native = swap_symmetric_atoms(aligned_native, native_seq)
+        swapped_rmsds = _per_residue_rmsd(aligned_pred, swapped_native, atom_mask)
+        swapped_native = target_frames.apply(swapped_native)
         swap_mask = initial_rmsds > swapped_rmsds
-        assert swap_mask.ndim == 2
         native_coords[swap_mask] = swapped_native[swap_mask]
         return native_coords

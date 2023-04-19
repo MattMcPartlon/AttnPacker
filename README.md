@@ -4,6 +4,9 @@ This repo contains code for AttnPacker
 
 Pre-trained models, and PDB files used to generate all results are available at https://zenodo.org/record/7713779#.ZApZHezMIVU
 
+UPDATE (04/19/2023): AttnPacker+Design now supports conditioning on partial sequence *and* rotamers. Pre trained models are
+available at https://zenodo.org/record/7843977#.ZEAWqezML0o. The main inference notebook has been updated to reflect this option.
+
 # Install
 
 
@@ -20,7 +23,8 @@ Note: The default pytorch installation may not include GPU support. Since this i
 # Examples
 
 Inference with AttnPacker is outlined in `protein_learning/examples/inference.ipynb`. This includes examples for sequence design, side-chain post processing 
-per-residue confidence prediction and more. Additional examples are outlined below.
+per-residue confidence prediction and more. A notbook with examples specific to sampling is available at `protein_learning/examples/sampling.ipynb`. Additional examples are outlined below.
+
 
 ## Run Post-Process Procedure on a PDB File
 ```

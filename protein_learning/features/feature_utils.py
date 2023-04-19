@@ -300,4 +300,5 @@ def sc_dihedral_encoding(coords, mask, sequence_enc):
         name=FeatureName.SC_DIHEDRAL.value,
         ty=FeatureTy.RESIDUE,
         n_classes=data.shape[-1],
+        raw_mask_value=torch.zeros(21),
     )
