@@ -382,7 +382,7 @@ class Inference:
             if len(model_input.decoy) <= chunk_size:
                 model_output = model(model_input, use_cycles=1)
             else:
-                model_output = chunk_inference(model, model_input, max_len=chunk_size)
+                model_output = chunk_inference(model, model_input, max_len=chunk_size, device=self.device)
             if format:
                 return format_prediction(model, model_input, model_output)
             return model_output
