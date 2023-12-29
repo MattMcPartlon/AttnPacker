@@ -358,9 +358,10 @@ class Inference(L.LightningModule):
 
     def _init_model(self):
         """Should only be called once - sort of like a lazy property"""
-        print("[INFO] Initializing AttnPacker Model")
         if exists(self.model):
             return self.model
+        print("[INFO] Initializing AttnPacker Model")
+
         # set up feature generator
         feature_config = sc.get_input_feature_config(
             self.arg_groups,

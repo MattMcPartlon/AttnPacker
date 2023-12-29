@@ -252,7 +252,7 @@ class SE3Transformer(nn.Module):
             differentiable=config.differentiable_coords,
             dirname=basis_dir,
         )
-        logger.info(f"computed basis in time : {np.round(basis_time, 3)}")
+        #logger.info(f"computed basis in time : {np.round(basis_time, 3)}")
 
         # main logic
         x, edge_info = feats, (edges, neighbor_info)

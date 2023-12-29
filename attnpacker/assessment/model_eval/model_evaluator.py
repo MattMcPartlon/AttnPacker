@@ -287,9 +287,9 @@ class ModelEvaluator:
                 n_miss += 1
                 continue
             n_hit += 1
-            print(f"[INFO] : finished forward pass for {sample.native.name}, \
-                inference time : {inference_times[-1]}"
-             )
+            # print(f"[INFO] : finished forward pass for {sample.native.name}, \
+            #     inference time : {inference_times[-1]}"
+            #  )
         return n_hit, n_miss
 
     def safe_eval(

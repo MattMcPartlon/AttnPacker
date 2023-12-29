@@ -160,10 +160,10 @@ class DefaultFeatureGenerator(FeatureGenerator):
             extra_residue=res_extra,
             extra_pair=pair_extra,
         )
-        # Mask Sequence
+        # Mask Sequencegit
         if exists(seq_mask) and self.apply_mask and self.mask_seq:
             feats[FeatureName.RES_TY.value].apply_mask(seq_mask)
-            logger.info(f"[seq] masked : {seq_mask[seq_mask].numel()}/{seq_mask.numel()}")
+            #logger.info(f"[seq] masked : {seq_mask[seq_mask].numel()}/{seq_mask.numel()}")
         if FeatureName.SC_DIHEDRAL.value in feats:
             _dihedral_mask = default(dihedral_mask, torch.ones(len(protein), device=protein.device).bool())
             dihedral_mask = torch.logical_or(default(seq_mask, _dihedral_mask), _dihedral_mask)
@@ -171,7 +171,7 @@ class DefaultFeatureGenerator(FeatureGenerator):
         # Apply intra-chain masks
         if exists(feat_mask) and self.apply_mask and self.mask_feats:
             feats = mask_intra_chain_features(feats, feat_mask=feat_mask, mask_seq=False)
-            logger.info(f"[feat] masked : {feat_mask[feat_mask].numel()}/{feat_mask.numel()}")
+            #logger.info(f"[feat] masked : {feat_mask[feat_mask].numel()}/{feat_mask.numel()}")
         # Apply inter-chain pair mask
         if exists(inter_chain_pair_mask) and self.apply_mask and self.mask_feats:
             feats = mask_inter_chain_pair_features(feats=feats, pair_mask=inter_chain_pair_mask)
