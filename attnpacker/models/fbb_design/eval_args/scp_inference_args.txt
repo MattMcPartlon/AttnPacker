@@ -1,0 +1,91 @@
+#--raise_exceptions
+
+# Paths to model and global configs
+
+#RX7_0 fbb_design_21_12_2022_15:59:33
+#RX7_1 fbb_design_21_12_2022_16:00:06
+#RX7_2 fbb_design_21_12_2022_16:07:51
+#RX7_3 fbb_design_21_12_2022_16:07:10
+#RX8_1 fbb_design_21_12_2022_16:03:58
+#RX8_2 fbb_design_21_12_2022_16:04:36
+#RX8_3 fbb_design_21_12_2022_16:06:02
+#RX11_1 fbb_design_21_12_2022_15:58:28
+#RX11_2 fbb_design_21_12_2022_15:57:43
+
+
+#fbb_design_21_12_2022_15:57:43.tar
+#fbb_design_ft_21_12_2022_15:57:43.tar
+
+#--max_samples 50
+
+--model_config_path /mnt/local/mmcpartlon/fbb_design_ft/models/params/fbb_design_21_12_2022_16:07:51_fbb_design.npy
+--global_config_path /mnt/local/mmcpartlon/fbb_design_ft/models/params/fbb_design_21_12_2022_16:07:51.npy
+# directory to save stats to
+--stats_dir /mnt/local/mmcpartlon/design_with_plv2/sidechain_packing/casp_all_rx7_2_design/stats/lin_mask_20
+--pdb_dir /mnt/local/mmcpartlon/design_with_plv2/sidechain_packing/casp_all_rx7_2_design/stats/lin_mask_20
+
+# Gpu to run on
+--gpu_indices 1
+
+# TODO: Mapping from target to sequence regions needing design
+#--design_seq
+
+# folder with target (decoy) pdbs
+--eval_decoy_folder /mnt/local/mmcpartlon/TrainTestData/test_data/CASP/casp_all
+#--eval_decoy_folder /mnt/local/mmcpartlon/TrainTestData/test_data/CASP/AF2_for_eval/AF2_pdbs_lt_600
+
+# folder with native PDBs
+--eval_native_folder /mnt/local/mmcpartlon/TrainTestData/test_data/CASP/casp_all
+#--eval_native_folder /mnt/local/mmcpartlon/TrainTestData/test_data/CASP/AF2_for_eval/AF2_pdbs_lt_600
+
+
+# list of targets to run inference on
+--eval_target_list /mnt/local/mmcpartlon/TrainTestData/test_data/LISTS/casp_all.list
+#--eval_target_list /mnt/local/mmcpartlon/TrainTestData/test_data/CASP/AF2_for_eval/AF2_pdbs_lt_600.list
+
+# number of decoys to generate for each target during inference
+--n_replicas 1
+
+# maximum sequence length to run inference on
+--max_len 50000
+
+
+############### stats args ################
+--get_nsr_stats
+--get_lddt_stats
+
+############## Masking #################
+######### INTRA-CHAIN MASKING OPTIONS #########
+--mask_seq
+--inverse_interface_mask_weight 0
+--interface_mask_weight 0
+--inverse_interface_full_mask_weight 0
+--interface_full_mask_weight 0
+--spatial_mask_weight 0
+--contiguous_mask_weight 1
+--random_mask_weight 0
+--no_mask_weight 0
+--full_mask_weight 0
+--true_interface_mask_weight 0
+--spatial_mask_top_k 100
+--spatial_mask_max_radius 16
+--contiguous_mask_min_len 20
+--contiguous_mask_max_len 20
+--random_mask_min_p 0.1
+--random_mask_max_p 0.1
+--max_mask_frac 0.4
+--min_mask_frac 0.0
+--interface_mask_min_frac 0.1
+--interface_mask_max_frac 0.6
+--inverse_interface_mask_min_frac 0.1
+--inverse_interface_mask_max_frac 0.6
+
+
+#TODO:
+# (1A) Add option to mask part of sequence
+# (1B) Add sampling with temperature
+# (2) clean up model/config loading
+# (3) add option to run on CPU
+
+# DO NOT REMOVE
+--inter_no_mask_weight 1
