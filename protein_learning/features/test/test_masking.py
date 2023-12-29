@@ -1,9 +1,9 @@
 """Tests for feature masking"""
-from protein_learning.features.feature_config import (
+from attnpacker.features.feature_config import (
     InputFeatureConfig, AA_ALPHABET, FeatureName, FeatureTy, FeatureEmbeddingTy
 )
-from protein_learning.features.feature_generator import DefaultFeatureGenerator
-from protein_learning.common.data.data_types.protein import Protein
+from attnpacker.features.feature_generator import DefaultFeatureGenerator
+from attnpacker.common.data.data_types.protein import Protein
 import torch
 
 config_kwargs = dict(

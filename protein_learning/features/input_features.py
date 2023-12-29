@@ -9,7 +9,7 @@ from typing import Dict
 import torch
 from einops import rearrange, repeat  # noqa
 
-from protein_learning.features.feature import Feature
+from attnpacker.features.feature import Feature
 
 PI = pi + 1e-10
 

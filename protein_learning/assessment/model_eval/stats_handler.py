@@ -4,7 +4,7 @@ from typing import Dict, Optional
 import torch
 from torch import Tensor
 
-from protein_learning.assessment.metrics import (
+from attnpacker.assessment.metrics import (
     calculate_perplexity,
     get_inter_chain_contacts,
     compute_coord_rmsd,
@@ -13,13 +13,13 @@ from protein_learning.assessment.metrics import (
     get_contact_recall,
     get_contact_precision,
 )
-from protein_learning.common.data.data_types.model_output import ModelOutput
-from protein_learning.common.protein_constants import INDEX_TO_AA_ONE, AA_TO_INDEX
-from protein_learning.networks.loss.loss_fn import DefaultLossFunc, LossTy
-from protein_learning.networks.loss.residue_loss import SequenceRecoveryLossNet
-from protein_learning.networks.loss.coord_loss import ViolationLoss
-from protein_learning.common.helpers import exists
-from protein_learning.protein_utils.align.kabsch_align import kabsch_align
+from attnpacker.common.data.data_types.model_output import ModelOutput
+from attnpacker.common.protein_constants import INDEX_TO_AA_ONE, AA_TO_INDEX
+from attnpacker.networks.loss.loss_fn import DefaultLossFunc, LossTy
+from attnpacker.networks.loss.residue_loss import SequenceRecoveryLossNet
+from attnpacker.networks.loss.coord_loss import ViolationLoss
+from attnpacker.common.helpers import exists
+from attnpacker.protein_utils.align.kabsch_align import kabsch_align
 
 
 class LossHandler:

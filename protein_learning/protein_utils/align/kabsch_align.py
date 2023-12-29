@@ -4,7 +4,7 @@ import torch
 from einops import rearrange # noqa
 from torch import Tensor
 
-from protein_learning.common.helpers import masked_mean, exists
+from attnpacker.common.helpers import masked_mean, exists
 
 to_rel_pos = lambda x: rearrange(x, "a b c -> () a b c") - rearrange(x, "a b c -> a () b c")
 matmul = lambda a, b: torch.einsum('b i j, b j k -> b i k', a, b)

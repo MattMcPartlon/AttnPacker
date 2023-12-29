@@ -1,7 +1,7 @@
 from __future__ import annotations
 from typing import Optional, NamedTuple
-from protein_learning.networks.common.utils import update_named_tuple
-from protein_learning.networks.tfn.repr.fiber import Fiber, cast_fiber
+from attnpacker.networks.common.utils import update_named_tuple
+from attnpacker.networks.tfn.repr.fiber import Fiber, cast_fiber
 
 
 class SE3AttentionConfig(NamedTuple):

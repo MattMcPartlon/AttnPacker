@@ -10,7 +10,7 @@ import numpy as np
 import torch
 from torch import Tensor
 
-from protein_learning.common.helpers import default, exists
+from attnpacker.common.helpers import default, exists
 
 ZERO_LOSS = dict(raw_loss=0, loss_val=0, loss_weight=0, baseline=0)
 

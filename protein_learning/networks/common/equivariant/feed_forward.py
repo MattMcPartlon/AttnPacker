@@ -1,11 +1,11 @@
 import torch
-from protein_learning.common.helpers import default, safe_norm
+from attnpacker.common.helpers import default, safe_norm
 from torch import nn, Tensor
 from typing import Optional, Tuple, Callable
-from protein_learning.networks.common.equivariant.norm import CoordNorm
-from protein_learning.networks.common.equivariant.linear import GVPLinear
+from attnpacker.networks.common.equivariant.norm import CoordNorm
+from attnpacker.networks.common.equivariant.linear import GVPLinear
 from math import sqrt
-from protein_learning.networks.common.helpers.torch_utils import fused_gelu as GELU  # noqa
+from attnpacker.networks.common.helpers.torch_utils import fused_gelu as GELU  # noqa
 from functools import partial
 
 default_coord_norm = partial(CoordNorm, nonlin=GELU, use_layernorm=True)

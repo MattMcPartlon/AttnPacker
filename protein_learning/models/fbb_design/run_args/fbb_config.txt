@@ -1,5 +1,5 @@
 #GLOBAL CONFIG PATH
-/home/mmcpartlon/ProteinLearningV2/protein_learning/models/fbb_design/run_args/fbb_global_config.txt
+/home/mmcpartlon/ProteinLearningV2/attnpacker/models/fbb_design/run_args/fbb_global_config.txt
 #--force_override
 #--global_config_override_path /mnt/local/mmcpartlon/fbb_design_ft/models/params/fbb_design_21_12_2022_16:00:06.npy
 

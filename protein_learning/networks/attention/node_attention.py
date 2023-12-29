@@ -6,8 +6,8 @@ import torch.nn.functional as F  # noqa
 from einops import rearrange, repeat  # noqa
 from einops.layers.torch import Rearrange  # noqa
 from torch import nn, einsum, Tensor
-from protein_learning.common.rigids import Rigids
-from protein_learning.networks.common.net_utils import (
+from attnpacker.common.rigids import Rigids
+from attnpacker.networks.common.net_utils import (
     exists,
     default,
     ReZero as Residual,
@@ -16,7 +16,7 @@ from protein_learning.networks.common.net_utils import (
     disable_tf32,
     get_min_val,
 )
-from protein_learning.networks.common.jit_scripts import Fuser
+from attnpacker.networks.common.jit_scripts import Fuser
 
 max_neg_value = lambda x: torch.finfo(x.dtype).min  # noqa
 

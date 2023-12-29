@@ -8,10 +8,10 @@ from einops import rearrange  # noqa
 from einops.layers.torch import Rearrange  # noqa
 from torch import nn, Tensor
 
-from protein_learning.common.data.data_types.model_output import ModelOutput
-from protein_learning.common.helpers import exists, safe_norm, default
-from protein_learning.common.rigids import Rigids
-from protein_learning.networks.loss.utils import softmax_cross_entropy, partition
+from attnpacker.common.data.data_types.model_output import ModelOutput
+from attnpacker.common.helpers import exists, safe_norm, default
+from attnpacker.common.rigids import Rigids
+from attnpacker.networks.loss.utils import softmax_cross_entropy, partition
 
 
 class PairDistLossNet(nn.Module):  # noqa

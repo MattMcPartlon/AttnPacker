@@ -2,9 +2,9 @@ import torch
 from einops import rearrange
 from torch import nn
 
-from protein_learning.networks.common.helpers.torch_utils import fused_gelu as NONLIN
-from protein_learning.networks.common.utils import default
-from protein_learning.networks.common.invariant.units import FeedForward
+from attnpacker.networks.common.helpers.torch_utils import fused_gelu as NONLIN
+from attnpacker.networks.common.utils import default
+from attnpacker.networks.common.invariant.units import FeedForward
 
 
 class FiberWeightedOut(nn.Module):

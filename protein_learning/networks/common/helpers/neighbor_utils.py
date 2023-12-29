@@ -5,8 +5,8 @@ from typing import List
 import torch
 from einops import rearrange, repeat  # noqa
 
-from protein_learning.networks.common.helpers.torch_utils import batched_index_select
-from protein_learning.networks.common.helpers.torch_utils import to_rel_pos
+from attnpacker.networks.common.helpers.torch_utils import batched_index_select
+from attnpacker.networks.common.helpers.torch_utils import to_rel_pos
 
 
 def safe_to_device(x, device):

@@ -3,12 +3,12 @@ from typing import Dict, Optional, Callable
 import torch
 from torch import nn
 
-from protein_learning.networks.common.utils import default
-from protein_learning.networks.tfn.repr.fiber import Fiber
-from protein_learning.networks.common.equivariant.linear import VNLinear, LinearInit
-from protein_learning.networks.common.equivariant.norm import CoordNorm
-from protein_learning.networks.common.constants import REZERO_INIT
-from protein_learning.networks.common.helpers.torch_utils import fused_gelu as GELU  # noqa
+from attnpacker.networks.common.utils import default
+from attnpacker.networks.tfn.repr.fiber import Fiber
+from attnpacker.networks.common.equivariant.linear import VNLinear, LinearInit
+from attnpacker.networks.common.equivariant.norm import CoordNorm
+from attnpacker.networks.common.constants import REZERO_INIT
+from attnpacker.networks.common.helpers.torch_utils import fused_gelu as GELU  # noqa
 from functools import partial
 
 NONLIN = GELU

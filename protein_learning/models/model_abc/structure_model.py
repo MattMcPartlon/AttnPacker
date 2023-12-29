@@ -6,15 +6,15 @@ import numpy as np
 import torch
 from torch import nn, Tensor
 
-from protein_learning.common.data.data_types.model_input import ModelInput
-from protein_learning.common.data.data_types.model_loss import ModelLoss
-from protein_learning.common.data.data_types.model_output import ModelOutput
-from protein_learning.common.global_constants import get_logger
-from protein_learning.features.input_embedding import InputEmbedding
-from protein_learning.models.model_abc.protein_model import ProteinModel
-from protein_learning.networks.loss.loss_config import LossTy
+from attnpacker.common.data.data_types.model_input import ModelInput
+from attnpacker.common.data.data_types.model_loss import ModelLoss
+from attnpacker.common.data.data_types.model_output import ModelOutput
+from attnpacker.common.global_constants import get_logger
+from attnpacker.features.input_embedding import InputEmbedding
+from attnpacker.models.model_abc.protein_model import ProteinModel
+from attnpacker.networks.loss.loss_config import LossTy
 import numpy as np
-from protein_learning.features.feature_config import FeatureName
+from attnpacker.features.feature_config import FeatureName
 from torch.utils.data import WeightedRandomSampler
 
 logger = get_logger(__name__)
@@ -24,16 +24,16 @@ class StructureModel(ProteinModel):
     """Evoformer + Coord prediction network"""
 
     def __init__(
-            self,
-            model: nn.Module,
-            input_embedding: InputEmbedding,
-            node_dim_hidden: int,
-            pair_dim_hidden: int,
-            # Recycling Options
-            n_cycles: int = -1,
-            use_cycles: int = -1,
-            project_in: bool = True,
-            n_dist_bins_for_recycle=15,
+        self,
+        model: nn.Module,
+        input_embedding: InputEmbedding,
+        node_dim_hidden: int,
+        pair_dim_hidden: int,
+        # Recycling Options
+        n_cycles: int = -1,
+        use_cycles: int = -1,
+        project_in: bool = True,
+        n_dist_bins_for_recycle=15,
     ):
         super(StructureModel, self).__init__(
             model=model,
@@ -80,12 +80,12 @@ class StructureModel(ProteinModel):
                     last_cycle=cycle == n_cycles - 1,
                 )
 
-                model_out = self.model(
-                    **fwd_kwargs
-                )
+                model_out = self.model(**fwd_kwargs)
 
             if cycle < n_cycles - 1:
-                with torch.set_grad_enabled(mode=(cycle + 2 == n_cycles and self.training)):
+                with torch.set_grad_enabled(
+                    mode=((cycle + 2 == n_cycles) and self.training)
+                ):
                     residue_feats, pair_feats, coords = self.get_feats_for_recycle(
                         model_out, fwd_kwargs
                     )
@@ -93,65 +93,55 @@ class StructureModel(ProteinModel):
                     pair_feats = self.pair_recycle_proj(pair_feats.detach())
                     pair_feats = pair_feats + self.embed_dists(coords.detach())
                     if cycle + 2 <= n_cycles:
-                        residue_feats, pair_feats = residue_feats.detach(), pair_feats.detach()
+                        residue_feats, pair_feats = (
+                            residue_feats.detach(),
+                            pair_feats.detach(),
+                        )
 
         model_out = self.get_model_output(sample, model_out, fwd_kwargs)
         self.finish_forward()
         return model_out
 
     def sample(
-        self, 
-        model_input: ModelInput, 
-        temperature: float=0.1, 
-        use_cycles=None, 
+        self,
+        model_input: ModelInput,
+        temperature: float = 0.1,
+        use_cycles=None,
         **kwargs
-        ):
+    ):
         # get sequence mask
 
         seq_mask = model_input.input_features.seq_mask
-        seq_mask = seq_mask.unsqueeze(0) if seq_mask.ndim==1 else seq_mask
+        seq_mask = seq_mask.unsqueeze(0) if seq_mask.ndim == 1 else seq_mask
         seq_feat = model_input.input_features[FeatureName.RES_TY]
         curr_seq = seq_feat.get_encoded_data().clone()
 
-        b,n = seq_mask.shape
+        b, n = seq_mask.shape
         design_idxs = [torch.arange(len(seq_mask[i]))[seq_mask[i]] for i in range(b)]
-        max_iter = max(map(len,design_idxs))
+        max_iter = max(map(len, design_idxs))
         seq_loss_fn = self.get_loss_fn()[LossTy.NSR]
 
         for design_iter in range(max_iter):
-            output = self.forward(
-                model_input,
-                use_cycles=use_cycles,
-                **kwargs
-            )
-        
-            # get residue logits
-            probs = torch.softmax(seq_loss_fn.get_predicted_logits(output.scalar_output)[...,:20]/temperature, dim=-1)
-            # sample 
-            for i in range(b):
-                sample_idx = min(design_iter,len(design_idxs[i])-1)
-                seq_idx = design_idxs[i][sample_idx]
-                pred_label = list(WeightedRandomSampler(probs[i,seq_idx],1))[0]
-                class_vec = torch.zeros_like(curr_seq[i,seq_idx])
-                class_vec[pred_label] = 1
-                curr_seq[i,seq_idx] = class_vec
+            output = self.forward(model_input, use_cycles=use_cycles, **kwargs)
 
-            #update feature
+            # get residue logits
+            probs = torch.softmax(
+                seq_loss_fn.get_predicted_logits(output.scalar_output)[..., :20]
+                / temperature,
+                dim=-1,
+            )
+            # sample
+            for i in range(b):
+                sample_idx = min(design_iter, len(design_idxs[i]) - 1)
+                seq_idx = design_idxs[i][sample_idx]
+                pred_label = list(WeightedRandomSampler(probs[i, seq_idx], 1))[0]
+                class_vec = torch.zeros_like(curr_seq[i, seq_idx])
+                class_vec[pred_label] = 1
+                curr_seq[i, seq_idx] = class_vec
+
+            # update feature
             seq_feat.encoded_data = curr_seq
             model_input.input_features[FeatureName.RES_TY] = seq_feat
-
-            
-
-            
-
-
-
-
-
-        
-
-
-        
 
     def get_input_res_n_pair_feats(self, sample: ModelInput):
         """Input residue and pair features"""
@@ -160,9 +150,7 @@ class StructureModel(ProteinModel):
 
     @abstractmethod
     def get_feats_for_recycle(
-            self,
-            model_out: Any,
-            model_in: Dict
+        self, model_out: Any, model_in: Dict
     ) -> Tuple[Tensor, Tensor, Tensor]:
         """Get residue pair and coordinate features from
         output (and input) of model.forward()
@@ -175,25 +163,21 @@ class StructureModel(ProteinModel):
 
     @abstractmethod
     def get_forward_kwargs(
-            self,
-            model_input: ModelInput,
-            residue_feats: Tensor,
-            pair_feats: Tensor,
-            model_output: Optional = None,
-            last_cycle: bool = True,
+        self,
+        model_input: ModelInput,
+        residue_feats: Tensor,
+        pair_feats: Tensor,
+        model_output: Optional = None,
+        last_cycle: bool = True,
     ) -> Dict:
         """Get keyword arguments for protein model forward pass"""
         pass
 
     @abstractmethod
     def get_model_output(
-            self,
-            model_input: ModelInput,
-            fwd_output: Any,
-            fwd_input: Dict, **kwargs
+        self, model_input: ModelInput, fwd_output: Any, fwd_input: Dict, **kwargs
     ) -> ModelOutput:
-        """Get Model output object
-        """
+        """Get Model output object"""
         pass
 
     @abstractmethod
@@ -215,5 +199,7 @@ class StructureModel(ProteinModel):
         CA_dists = torch.cdist(CA, CA)
         CA_dists = CA_dists * (self.n_dist_bins_for_recycle / 21)
         CA_dists = torch.clamp(CA_dists, 0, self.n_dist_bins_for_recycle - 1).long()
-        d_bins = torch.nn.functional.one_hot(CA_dists.detach(), self.n_dist_bins_for_recycle)
+        d_bins = torch.nn.functional.one_hot(
+            CA_dists.detach(), self.n_dist_bins_for_recycle
+        )
         return self.ca_emb(d_bins.float()).reshape(b, n, n, -1)

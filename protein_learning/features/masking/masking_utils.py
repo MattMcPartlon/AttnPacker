@@ -9,9 +9,9 @@ import torch
 from einops import repeat, rearrange  # noqa
 from torch import Tensor
 
-from protein_learning.common.helpers import exists, default
-from protein_learning.features.feature_config import FeatureName, FeatureTy
-from protein_learning.features.input_features import Feature
+from attnpacker.common.helpers import exists, default
+from attnpacker.features.feature_config import FeatureName, FeatureTy
+from attnpacker.features.input_features import Feature
 
 max_value = lambda x: torch.finfo(x.dtype).max  # noqa
 

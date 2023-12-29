@@ -7,15 +7,15 @@ import torch.nn.functional as F  # noqa
 from einops import rearrange  # noqa
 from torch import Tensor, nn
 
-from protein_learning.assessment.metrics import compute_coord_lddt
-from protein_learning.common.data.data_types.model_output import ModelOutput
-from protein_learning.common.helpers import exists, default
-from protein_learning.common.rigids import Rigids
-from protein_learning.networks.loss.utils import FeedForward
-from protein_learning.networks.loss.utils import (
+from attnpacker.assessment.metrics import compute_coord_lddt
+from attnpacker.common.data.data_types.model_output import ModelOutput
+from attnpacker.common.helpers import exists, default
+from attnpacker.common.rigids import Rigids
+from attnpacker.networks.loss.utils import FeedForward
+from attnpacker.networks.loss.utils import (
     softmax_cross_entropy,
 )
-from protein_learning.common.protein_constants import DISTAL_ATOM_MASK_TENSOR, FUNCTIONAL_ATOM_MASK_TENSOR, ALL_ATOMS
+from attnpacker.common.protein_constants import DISTAL_ATOM_MASK_TENSOR, FUNCTIONAL_ATOM_MASK_TENSOR, ALL_ATOMS
 
 
 class SequenceRecoveryLossNet(nn.Module):  # noqa

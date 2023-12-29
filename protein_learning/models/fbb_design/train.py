@@ -12,22 +12,22 @@ from functools import partial
 
 import numpy as np
 import torch
-from protein_learning.features.input_embedding import InputEmbedding
-from protein_learning.models.fbb_design.train_utils import TrainDesign
-from protein_learning.networks.geometric_gt.geom_gt_config import add_gt_options, get_configs as get_gt_configs
-from protein_learning.networks.loss.loss_fn import LossConfig, DefaultLossFunc
-from protein_learning.features.default_feature_generator import DefaultFeatureGenerator
-from protein_learning.common.data.data_types.protein import Protein
-from protein_learning.models.fbb_design.fbb_model import FBBDesigner
-from protein_learning.networks.se3_transformer.se3_transformer_config import SE3TransformerConfig, add_se3_options
-from protein_learning.models.utils.dataset_augment_fns import impute_cb
-from protein_learning.common.data.data_types.model_input import ExtraInput
-from protein_learning.common.data.data_types.protein import Protein
-from protein_learning.common.protein_constants import AA_TO_INDEX
-from protein_learning.common.rigids import Rigids
+from attnpacker.features.input_embedding import InputEmbedding
+from attnpacker.models.fbb_design.train_utils import TrainDesign
+from attnpacker.networks.geometric_gt.geom_gt_config import add_gt_options, get_configs as get_gt_configs
+from attnpacker.networks.loss.loss_fn import LossConfig, DefaultLossFunc
+from attnpacker.features.default_feature_generator import DefaultFeatureGenerator
+from attnpacker.common.data.data_types.protein import Protein
+from attnpacker.models.fbb_design.fbb_model import FBBDesigner
+from attnpacker.networks.se3_transformer.se3_transformer_config import SE3TransformerConfig, add_se3_options
+from attnpacker.models.utils.dataset_augment_fns import impute_cb
+from attnpacker.common.data.data_types.model_input import ExtraInput
+from attnpacker.common.data.data_types.protein import Protein
+from attnpacker.common.protein_constants import AA_TO_INDEX
+from attnpacker.common.rigids import Rigids
 from torch import Tensor
 from typing import Any
-from protein_learning.common.helpers import exists
+from attnpacker.common.helpers import exists
 
 
 class ExtraFBB(ExtraInput):

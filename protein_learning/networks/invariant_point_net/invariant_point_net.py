@@ -5,13 +5,13 @@ import torch.nn.functional as F  # noqa
 from einops.layers.torch import Rearrange # noqa
 from torch import nn, Tensor
 
-from protein_learning.common.global_constants import get_logger
-from protein_learning.common.helpers import exists, default
-from protein_learning.common.rigids import Rigids
-from protein_learning.networks.common.net_utils import Residual, LearnedOuterProd, FeedForward, PreNorm
-from protein_learning.networks.evoformer.triangle_updates import TriangleMul
-from protein_learning.networks.invariant_point_net.geometric_graph_attention import GeometricGraphAttentionBlock
-from protein_learning.networks.invariant_point_net.ipn_config import IPNConfig
+from attnpacker.common.global_constants import get_logger
+from attnpacker.common.helpers import exists, default
+from attnpacker.common.rigids import Rigids
+from attnpacker.networks.common.net_utils import Residual, LearnedOuterProd, FeedForward, PreNorm
+from attnpacker.networks.evoformer.triangle_updates import TriangleMul
+from attnpacker.networks.invariant_point_net.geometric_graph_attention import GeometricGraphAttentionBlock
+from attnpacker.networks.invariant_point_net.ipn_config import IPNConfig
 import torch.utils.checkpoint as checkpoint
 
 logger = get_logger(__name__)

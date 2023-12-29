@@ -14,22 +14,22 @@ from typing import Optional, Dict, List, Union, Any, Tuple
 import torch
 from torch import Tensor
 
-from protein_learning.common.rigids import Rigids
-from protein_learning.common.helpers import exists, safe_to_device, default
-from protein_learning.common.io.pdb_utils import (
+from attnpacker.common.rigids import Rigids
+from attnpacker.common.helpers import exists, safe_to_device, default
+from attnpacker.common.io.pdb_utils import (
     extract_atom_coords_n_mask_tensors,
     extract_pdb_seq_from_pdb_file,
 )
-from protein_learning.common.io.sequence_utils import load_fasta_file
-from protein_learning.common.io.pdb_io import write_pdb
-from protein_learning.common.protein_constants import BB_ATOMS, SC_ATOMS, AA_TO_INDEX, ALL_ATOMS
-from protein_learning.protein_utils.align.per_residue import impute_beta_carbon
+from attnpacker.common.io.sequence_utils import load_fasta_file
+from attnpacker.common.io.pdb_io import write_pdb
+from attnpacker.common.protein_constants import BB_ATOMS, SC_ATOMS, AA_TO_INDEX, ALL_ATOMS
+from attnpacker.protein_utils.align.per_residue import impute_beta_carbon
 
 
-from protein_learning.protein_utils.align.kabsch_align import _calc_kabsch_rot_n_trans  # noqa
+from attnpacker.protein_utils.align.kabsch_align import _calc_kabsch_rot_n_trans  # noqa
 from einops import rearrange  # noqa
-from protein_learning.common.io.dssp_utils import get_ss_from_pdb_and_seq, encode_sec_structure
-from protein_learning.common.io.extract_cdrs import extract_cdr_posns
+from attnpacker.common.io.dssp_utils import get_ss_from_pdb_and_seq, encode_sec_structure
+from attnpacker.common.io.extract_cdrs import extract_cdr_posns
 
 BB_ATOM_SET, SC_ATOM_SET = set(BB_ATOMS), set(SC_ATOMS)
 

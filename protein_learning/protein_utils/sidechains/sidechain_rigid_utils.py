@@ -9,11 +9,11 @@ Function names often differ, and all but a few helped functions
 require major refactors to fit our framework. 
 """
 import torch
-from protein_learning.networks.common.of_rigid_utils import Rigid, Rotation
+from attnpacker.networks.common.of_rigid_utils import Rigid, Rotation
 from torch import nn
 from typing import Dict
-import protein_learning.common.protein_constants as pc
-from protein_learning.common.helpers import disable_tf32
+import attnpacker.common.protein_constants as pc
+from attnpacker.common.helpers import disable_tf32
 from typing import Dict
 from torchtyping import TensorType, patch_typeguard
 from typeguard import typechecked

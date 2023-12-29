@@ -18,22 +18,22 @@ torch.set_printoptions(
     profile=None,
     sci_mode=False,
 )
-from protein_learning.assessment.sidechain import assess_sidechains
-from protein_learning.common.helpers import masked_mean
-from protein_learning.protein_utils.sidechains.project_sidechains import (
+from attnpacker.assessment.sidechain import assess_sidechains
+from attnpacker.common.helpers import masked_mean
+from attnpacker.protein_utils.sidechains.project_sidechains import (
     project_onto_rotamers,
     compute_sc_rmsd,
     compute_clashes,
 )
-from protein_learning.protein_utils.sidechains.sidechain_utils import align_symmetric_sidechains, swap_symmetric_atoms
-from protein_learning.common.data.data_types.protein import Protein
+from attnpacker.protein_utils.sidechains.sidechain_utils import align_symmetric_sidechains, swap_symmetric_atoms
+from attnpacker.common.data.data_types.protein import Protein
 import torch
-import protein_learning.common.protein_constants as pc
-from protein_learning.common.data.datasets.utils import set_canonical_coords_n_masks
-from protein_learning.common.io.pdb_io import write_pdb
+import attnpacker.common.protein_constants as pc
+from attnpacker.common.data.datasets.utils import set_canonical_coords_n_masks
+from attnpacker.common.io.pdb_io import write_pdb
 import math
-from protein_learning.common.protein_constants import DISTAL_ATOM_MASK_TENSOR, AA_INDEX_MAP
-from protein_learning.assessment.metrics import compute_coord_lddt
+from attnpacker.common.protein_constants import DISTAL_ATOM_MASK_TENSOR, AA_INDEX_MAP
+from attnpacker.assessment.metrics import compute_coord_lddt
 from multiprocessing import Pool
 from functools import partial
 from collections import defaultdict

@@ -1,15 +1,15 @@
 import torch
 from torch import nn, Tensor
-from protein_learning.networks.common.of_rigid_utils import Rigid, Rotation
+from attnpacker.networks.common.of_rigid_utils import Rigid, Rotation
 from typing import Optional, Dict, Tuple
-from protein_learning.networks.common.of_utils import Linear
-from protein_learning.common.helpers import default, exists
+from attnpacker.networks.common.of_utils import Linear
+from attnpacker.common.helpers import default, exists
 from torchtyping import TensorType, patch_typeguard
 from typeguard import typechecked
 
 patch_typeguard()
 
-from protein_learning.protein_utils.sidechains.sidechain_rigid_utils import (
+from attnpacker.protein_utils.sidechains.sidechain_rigid_utils import (
     frames_and_literature_positions_to_atom37_pos,
     torsion_angles_to_frames,
     restype_rigid_group_default_frame,

@@ -1,5 +1,5 @@
 """Tests for feature config"""
-from protein_learning.features.feature_config import InputFeatureConfig, FeatureName, FeatureEmbeddingTy
+from attnpacker.features.feature_config import InputFeatureConfig, FeatureName, FeatureEmbeddingTy
 
 
 def test_scalar():

@@ -6,10 +6,10 @@ import torch
 from einops import repeat  # noqa
 from torch import Tensor
 
-from protein_learning.common.data.data_types.protein import Protein
-from protein_learning.common.helpers import default, exists
-from protein_learning.features.masking.masking_utils import get_partition_mask
-from protein_learning.common.io.utils import load_npy
+from attnpacker.common.data.data_types.protein import Protein
+from attnpacker.common.helpers import default, exists
+from attnpacker.features.masking.masking_utils import get_partition_mask
+from attnpacker.common.io.utils import load_npy
 from collections import defaultdict
 
 protein_to_name = lambda protein: protein.chain_1_name

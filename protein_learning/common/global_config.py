@@ -7,11 +7,11 @@ from typing import Optional, NamedTuple, List
 import numpy as np
 import torch
 
-from protein_learning.common.global_constants import (
+from attnpacker.common.global_constants import (
     START_TIME, CHECKPOINTS, LOGS, PARAMS, MODELS, STATS
 )
-from protein_learning.common.helpers import exists, default
-from protein_learning.common.io.utils import parse_arg_file, load_npy
+from attnpacker.common.helpers import exists, default
+from attnpacker.common.io.utils import parse_arg_file, load_npy
 
 
 def get_config(arg_list):

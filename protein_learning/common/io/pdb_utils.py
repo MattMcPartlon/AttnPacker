@@ -12,16 +12,22 @@ from Bio.PDB import PDBParser, MMCIFParser  # noqa
 from Bio.PDB.Polypeptide import three_to_one, is_aa  # noqa
 from Bio.PDB.Residue import Residue  # noqa
 from Bio.PDB.Structure import Structure  # noqa
-from Bio.SubsMat.MatrixInfo import blosum80 as BLOSUM80  # noqa
+from Bio.Align import substitution_matrices
 from torch import Tensor
 
-from protein_learning.common.helpers import default
-from protein_learning.common.io.select_atoms import SelectCG, SelectCB
-from protein_learning.common.protein_constants import VALID_AA_3_LETTER, VALID_AA_1_LETTER
+from attnpacker.common.helpers import default
+from attnpacker.common.io.select_atoms import SelectCG, SelectCB
+from attnpacker.common.protein_constants import (
+    VALID_AA_3_LETTER,
+    VALID_AA_1_LETTER,
+)
 
 VALID_AA_1_LETTER_SET = set(VALID_AA_1_LETTER)
 VALID_AA_3_LETTER_SET = set(VALID_AA_3_LETTER)
-VALID_AA_3_LETTER_SET_EXTENDED = set(list(VALID_AA_3_LETTER) + ["C3Y", "ASX", "GLX", "UNK"])
+VALID_AA_3_LETTER_SET_EXTENDED = set(
+    list(VALID_AA_3_LETTER) + ["C3Y", "ASX", "GLX", "UNK"]
+)
+BLOSUM80 = substitution_matrices.load("BLOSUM80")
 
 
 # getting errors for non-standard AAs
@@ -72,7 +78,9 @@ def get_structure_parser(pdb_file: str) -> Union[PDBParser, MMCIFParser]:
     :return: structure parser for pdb input
     """
     is_pdb, is_cif = [pdb_file.endswith(x) for x in (".pdb", ".cif")]
-    assert is_pdb or is_cif, f"ERROR: pdb file must have .cif or .pdb type, got {pdb_file}"
+    assert (
+        is_pdb or is_cif
+    ), f"ERROR: pdb file must have .cif or .pdb type, got {pdb_file}"
     return MMCIFParser(QUIET=True) if is_cif else PDBParser(QUIET=True)
 
 
@@ -92,15 +100,22 @@ def extract_pdb_seq_from_residues(
     extract a list of residues with valid 3D coordinates excluding non-standard amino acids
     returns the amino acid sequence as well as a list of residues with standard amino acids
     """
-    valid_list = VALID_AA_3_LETTER_SET if ignore_non_standard else VALID_AA_3_LETTER_SET_EXTENDED
-    fltr = lambda r: is_aa(r, standard=ignore_non_standard) and r.get_resname().upper() in valid_list
+    valid_list = (
+        VALID_AA_3_LETTER_SET if ignore_non_standard else VALID_AA_3_LETTER_SET_EXTENDED
+    )
+    fltr = (
+        lambda r: is_aa(r, standard=ignore_non_standard)
+        and r.get_resname().upper() in valid_list
+    )
     residueList = list(filter(fltr, residues))
     res_names = list(map(lambda x: replace_non_standard(x.get_resname()), residueList))
     pdbseq = "".join(list(map(lambda x: three_to_one(x), res_names)))
     return pdbseq, residueList
 
 
-def extract_pdb_seq_by_chain(structure: Structure, ignore_non_standard=True) -> Tuple[List, ...]:
+def extract_pdb_seq_by_chain(
+    structure: Structure, ignore_non_standard=True
+) -> Tuple[List, ...]:
     """extract sequences and residue lists for each chain
     :return: pdbseqs, residue lists and also the chain objects
     """
@@ -108,7 +123,9 @@ def extract_pdb_seq_by_chain(structure: Structure, ignore_non_standard=True) -> 
     pdbseqs, residueLists, chains = [], [], []
     for chain in model:
         residues = list(chain.get_residues())
-        pdbseq, residueList = extract_pdb_seq_from_residues(residues, ignore_non_standard=ignore_non_standard)
+        pdbseq, residueList = extract_pdb_seq_from_residues(
+            residues, ignore_non_standard=ignore_non_standard
+        )
         pdbseqs.append(pdbseq)
         residueLists.append(residueList)
         chains.append(chain)
@@ -136,7 +153,13 @@ def calc_num_mismatches(alignment) -> Tuple[int, int]:
     :return: number of mismatches in sequence alignment
     """
     S1, S2 = alignment[:2]
-    numMisMatches = np.sum([a != b for a, b in zip(S1, S2) if a != "-" and b != "-" and a != "X" and b != "X"])
+    numMisMatches = np.sum(
+        [
+            a != b
+            for a, b in zip(S1, S2)
+            if a != "-" and b != "-" and a != "X" and b != "X"
+        ]
+    )
     numMatches = np.sum([a == b for a, b in zip(S1, S2) if a != "-" and a != "X"])
     return int(numMisMatches), int(numMatches)
 
@@ -231,7 +254,9 @@ def map_seq_to_pdb(
         raise Exception("ERROR: the pdb file does not exist: ", pdbfile)
 
     # extract PDB sequences by chains
-    pdbseqs, residueLists, chains = extract_pdb_seq_from_pdb_file(pdbfile, ignore_non_standard=ignore_non_standard)
+    pdbseqs, residueLists, chains = extract_pdb_seq_from_pdb_file(
+        pdbfile, ignore_non_standard=ignore_non_standard
+    )
 
     bestPDBSeq = None
     bestMapping = None
@@ -241,7 +266,9 @@ def map_seq_to_pdb(
     maxMatches = np.iinfo(np.int32).min
 
     for pdbseq, residueList, chain in zip(pdbseqs, residueLists, chains):
-        seq2pdb_mapping, numMisMatches, numMatches = map_seq_to_residue_list(sequence, pdbseq, residueList)
+        seq2pdb_mapping, numMisMatches, numMatches = map_seq_to_residue_list(
+            sequence, pdbseq, residueList
+        )
         if seq2pdb_mapping is None:
             continue
         if maxMatches < numMatches:
@@ -268,10 +295,19 @@ def map_seq_to_pdb(
         )
         return None, None, None, None, None, None
 
-    return bestMapping, bestResidueList, bestPDBSeq, bestChain, minMisMatches, maxMatches
+    return (
+        bestMapping,
+        bestResidueList,
+        bestPDBSeq,
+        bestChain,
+        minMisMatches,
+        maxMatches,
+    )
 
 
-def extract_coords_by_mapping(sequence, seq2pdb_mapping, residueList, atoms, bUseAlternativeAtoms=True):
+def extract_coords_by_mapping(
+    sequence, seq2pdb_mapping, residueList, atoms, bUseAlternativeAtoms=True
+):
     """Extract coordinates from residue list by sequence mapping
     :param sequence:
     :param seq2pdb_mapping:
@@ -323,7 +359,9 @@ def extract_coords_by_mapping(sequence, seq2pdb_mapping, residueList, atoms, bUs
     return atomCoordinates, numInvalidAtoms
 
 
-def extract_seq_from_pdb_n_chain_id(pdbfile: str, chain_id: str, name: str = None, ignore_non_std=True) -> str:
+def extract_seq_from_pdb_n_chain_id(
+    pdbfile: str, chain_id: str, name: str = None, ignore_non_std=True
+) -> str:
     """Extract the sequence of a specific pdb chain"""
 
     name = default(name, os.path.basename(pdbfile)[:-4])
@@ -334,9 +372,13 @@ def extract_seq_from_pdb_n_chain_id(pdbfile: str, chain_id: str, name: str = Non
         chain_ids.append(chain.get_id())
         residues = chain.get_residues()
         if chain.get_id() == chain_id:
-            pdbseq, _ = extract_pdb_seq_from_residues(residues, ignore_non_standard=ignore_non_std)
+            pdbseq, _ = extract_pdb_seq_from_residues(
+                residues, ignore_non_standard=ignore_non_std
+            )
             return pdbseq
-    raise PDBExtractException(f"No chain with id {chain_id}, found chains: {[chain_ids]}")
+    raise PDBExtractException(
+        f"No chain with id {chain_id}, found chains: {[chain_ids]}"
+    )
 
 
 def extract_coords_from_seq_n_pdb(
@@ -373,7 +415,11 @@ def extract_coords_from_seq_n_pdb(
         return None, None, None, None, None
     residueList = list(residueList)
     atom_coordinates, _ = extract_coords_by_mapping(
-        sequence, seq2pdb_mapping, residueList, atoms=atoms, bUseAlternativeAtoms=bUseAlternativeAtoms
+        sequence,
+        seq2pdb_mapping,
+        residueList,
+        atoms=atoms,
+        bUseAlternativeAtoms=bUseAlternativeAtoms,
     )
     res_ids = [r.get_id()[1] for r in residueList]
     return atom_coordinates, pdbseq, num_mismatches, num_matches, res_ids
@@ -438,7 +484,9 @@ def extract_atom_coords_n_mask_tensors(
     return atom_coords, atom_mask, seq
 
 
-def _get_coord_n_mask_tensors(atom_coords: List[Dict[str, np.ndarray]], atom_tys: List[str]) -> Tuple[Tensor, Tensor]:
+def _get_coord_n_mask_tensors(
+    atom_coords: List[Dict[str, np.ndarray]], atom_tys: List[str]
+) -> Tuple[Tensor, Tensor]:
     """Retrieves coord and mask tensors from output of extract_coords_from_seq_n_pdb(...).
 
     :param atom_coords: List of dictionaries. each dict mapping from atom type to atom coordinates.

@@ -2,9 +2,9 @@ import torch
 from torch import einsum
 from torch import nn
 
-from protein_learning.networks.common.equivariant.norm import CoordNorm
-from protein_learning.networks.common.constants import EPS
-from protein_learning.networks.common.utils import default
+from attnpacker.networks.common.equivariant.norm import CoordNorm
+from attnpacker.networks.common.constants import EPS
+from attnpacker.networks.common.utils import default
 
 
 class PhaseNorm(nn.Module):

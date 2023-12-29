@@ -1,8 +1,8 @@
 from typing import Tuple
 
-from protein_learning.common.data.data_types.protein import Protein
-from protein_learning.common.helpers import exists
-from protein_learning.features.masking.partition import (
+from attnpacker.common.data.data_types.protein import Protein
+from attnpacker.common.helpers import exists
+from attnpacker.features.masking.partition import (
     ChainPartitionGenerator,
 )
 

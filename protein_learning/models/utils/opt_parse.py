@@ -1,6 +1,6 @@
 from argparse import Namespace
 
-from protein_learning.common.helpers import default, exists
+from attnpacker.common.helpers import default, exists
 
 namespace_2_dict = lambda x: vars(x) if isinstance(x, Namespace) else x
 

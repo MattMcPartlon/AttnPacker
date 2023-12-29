@@ -4,21 +4,21 @@ import torch
 torch.multiprocessing.set_sharing_strategy('file_system')
 from torch.utils.data import Dataset, DataLoader
 from abc import abstractmethod
-from protein_learning.common.data.data_types.model_input import ModelInput
+from attnpacker.common.data.data_types.model_input import ModelInput
 from typing import Optional, Tuple, List, Union
 import os
 import numpy as np
-from protein_learning.common.helpers import exists, default
-from protein_learning.common.io.pdb_utils import (
+from attnpacker.common.helpers import exists, default
+from attnpacker.common.io.pdb_utils import (
     extract_atom_coords_n_mask_tensors,
     extract_pdb_seq_from_pdb_file,
 )
-from protein_learning.common.io.sequence_utils import load_fasta_file
+from attnpacker.common.io.sequence_utils import load_fasta_file
 from torch import Tensor
-from protein_learning.common.protein_constants import (
+from attnpacker.common.protein_constants import (
     ALL_ATOMS, BB_ATOMS, SC_ATOMS
 )
-from protein_learning.common.global_constants import get_logger
+from attnpacker.common.global_constants import get_logger
 import numpy
 import random
 

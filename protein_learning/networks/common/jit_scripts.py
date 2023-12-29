@@ -1,7 +1,7 @@
 import torch
 from torch import Tensor, nn
 import torch.nn.functional as F  # noqa
-from protein_learning.networks.common.constants import FUSE
+from attnpacker.networks.common.constants import FUSE
 from einops import rearrange, repeat  # noqa
 
 

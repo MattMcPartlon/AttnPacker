@@ -1,4 +1,4 @@
-from protein_learning.common.protein_constants import ONE_TO_THREE
+from attnpacker.common.protein_constants import ONE_TO_THREE
 import torch
 
 SC_ATOMS = [
@@ -40,7 +40,7 @@ import urllib
 import os
 import sys
 from typing import Optional, List, Tuple
-from protein_learning.common.helpers import default
+from attnpacker.common.helpers import default
 
 
 def download_pdb(pdbcode, datadir, downloadurl="https://files.rcsb.org/download/"):

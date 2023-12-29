@@ -5,11 +5,11 @@ from torch import nn, einsum, Tensor
 
 from einops.layers.torch import Rearrange
 from einops import rearrange, repeat  # noqa
-from protein_learning.common.helpers import exists, default, get_min_val as max_neg_value, disable_tf32
-from protein_learning.networks.common.net_utils import SplitLinear, Residual
-from protein_learning.networks.ipa.ipa_config import IPAConfig
-from protein_learning.common.rigids import Rigids
-from protein_learning.networks.loss.coord_loss import FAPELoss
+from attnpacker.common.helpers import exists, default, get_min_val as max_neg_value, disable_tf32
+from attnpacker.networks.common.net_utils import SplitLinear, Residual
+from attnpacker.networks.ipa.ipa_config import IPAConfig
+from attnpacker.common.rigids import Rigids
+from attnpacker.networks.loss.coord_loss import FAPELoss
 from typing import Optional, List
 
 

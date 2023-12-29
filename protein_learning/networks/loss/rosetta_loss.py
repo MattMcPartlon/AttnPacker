@@ -7,9 +7,9 @@ from pyrosetta import *
 from pyrosetta.rosetta import *
 from pyrosetta.rosetta.numeric import xyzVector_double_t as xyz_vec
 
-from protein_learning.common.protein_constants import N_BB_ATOMS
-from protein_learning.common.helpers import default
-from protein_learning.protein_utils.dihedral.orientation_utils import signed_dihedral_4, get_bb_dihedral
+from attnpacker.common.protein_constants import N_BB_ATOMS
+from attnpacker.common.helpers import default
+from attnpacker.protein_utils.dihedral.orientation_utils import signed_dihedral_4, get_bb_dihedral
 
 DSSP = protocols.moves.DsspMover()  # noqa
 init(

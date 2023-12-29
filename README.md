@@ -22,8 +22,8 @@ Note: The default pytorch installation may not include GPU support. Since this i
 
 # Examples
 
-Inference with AttnPacker is outlined in `protein_learning/examples/inference.ipynb`. This includes examples for sequence design, side-chain post processing 
-per-residue confidence prediction and more. A notbook with examples specific to sampling is available at `protein_learning/examples/sampling.ipynb`. Additional examples are outlined below.
+Inference with AttnPacker is outlined in `attnpacker/examples/inference.ipynb`. This includes examples for sequence design, side-chain post processing 
+per-residue confidence prediction and more. A notbook with examples specific to sampling is available at `attnpacker/examples/sampling.ipynb`. Additional examples are outlined below.
 
 
 ## Run Post-Process Procedure on a PDB File
@@ -56,7 +56,7 @@ optional arguments:
                         penalize average deviaiton from initial dihedral angles with this weight (default: 0)
   --device DEVICE       device to use when running this procedure (default: cpu)
 
-(py38)[mmcpartlon@raptorx11 AttnPacker]$ python protein_learning/examples/post_process.py ./protein_learning/examples/pdbs/T1057-predicted.pdb --steric_tol_allowance 0 --steric_tol_frac 0.95 --max_optim_iters 200 --device cuda:0
+(py38)[mmcpartlon@raptorx11 AttnPacker]$ python attnpacker/examples/post_process.py ./attnpacker/examples/pdbs/T1057-predicted.pdb --steric_tol_allowance 0 --steric_tol_frac 0.95 --max_optim_iters 200 --device cuda:0
 
 [fn: project_onto_rotamers] : Using device cuda:0
 [INFO] Beginning rotamer projection
@@ -71,14 +71,14 @@ beginning iter: 0, steric weight: 0.2
    [Steric loss] = 0.002
    [Angle Dev. loss] = 0.001
 
-Saving to: ./protein_learning/examples/pdbs/post-processed-T1057-predicted.pdb
+Saving to: ./attnpacker/examples/pdbs/post-processed-T1057-predicted.pdb
 Finished in 3.32 seconds
 ```
 
 ## Compare Side-Chain prediction with native structure
 
 ```python
-from protein_learning.assessment.sidechain import assess_sidechains, summarize
+from attnpacker.assessment.sidechain import assess_sidechains, summarize
 import pprint
 predicted_pdb = "./pdbs/post-processed-T1080-predicted.pdb"
 target_pdb = "./pdbs/T1080.pdb"

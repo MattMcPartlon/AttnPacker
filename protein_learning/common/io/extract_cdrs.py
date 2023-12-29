@@ -1,6 +1,6 @@
 from typing import List
 
-from protein_learning.common.io.pdb_utils import extract_pdb_seq_from_pdb_file
+from attnpacker.common.io.pdb_utils import extract_pdb_seq_from_pdb_file
 
 
 def extract_cdr_posns(pdb_file: str, heavy_chain_ids: List[str], light_chain_ids: List[str]):

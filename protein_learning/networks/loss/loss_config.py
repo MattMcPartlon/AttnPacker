@@ -5,10 +5,10 @@ from typing import Optional, List, Tuple, Union
 
 from torch import nn
 
-from protein_learning.networks.common.net_utils import exists, default
-from protein_learning.networks.loss.pair_loss import PairDistLossNet
-from protein_learning.networks.loss.residue_loss import SequenceRecoveryLossNet, PredLDDTLossNet
-from protein_learning.networks.loss.side_chain_loss import SideChainDeviationLoss
+from attnpacker.networks.common.net_utils import exists, default
+from attnpacker.networks.loss.pair_loss import PairDistLossNet
+from attnpacker.networks.loss.residue_loss import SequenceRecoveryLossNet, PredLDDTLossNet
+from attnpacker.networks.loss.side_chain_loss import SideChainDeviationLoss
 
 
 class LossTy(Enum):

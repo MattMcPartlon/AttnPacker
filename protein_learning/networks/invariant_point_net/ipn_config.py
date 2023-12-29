@@ -1,9 +1,9 @@
 """Invariant Point Network Config"""
 from typing import Optional
-from protein_learning.networks.config.net_config import NetConfig
+from attnpacker.networks.config.net_config import NetConfig
 from typing import Union, Tuple, List
-from protein_learning.networks.common.attention_utils import SimilarityType
-from protein_learning.common.helpers import default, exists
+from attnpacker.networks.common.attention_utils import SimilarityType
+from attnpacker.common.helpers import default, exists
 
 
 class IPNConfig(NetConfig):

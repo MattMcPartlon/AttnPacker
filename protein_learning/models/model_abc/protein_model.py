@@ -5,11 +5,11 @@ from typing import Dict, Any, List
 import torch
 from torch import nn, Tensor
 
-from protein_learning.common.data.data_types.model_input import ModelInput
-from protein_learning.common.data.data_types.model_loss import ModelLoss
-from protein_learning.common.data.data_types.model_output import ModelOutput
-from protein_learning.common.global_constants import get_logger
-from protein_learning.features.input_embedding import InputEmbedding
+from attnpacker.common.data.data_types.model_input import ModelInput
+from attnpacker.common.data.data_types.model_loss import ModelLoss
+from attnpacker.common.data.data_types.model_output import ModelOutput
+from attnpacker.common.global_constants import get_logger
+from attnpacker.features.input_embedding import InputEmbedding
 
 logger = get_logger(__name__)
 
@@ -92,7 +92,9 @@ class ProteinModel(nn.Module):
         pass
 
     @abstractmethod
-    def get_model_output(self, model_input: ModelInput, fwd_output: Any, fwd_input: Dict, **kwargs) -> ModelOutput:
+    def get_model_output(
+        self, model_input: ModelInput, fwd_output: Any, fwd_input: Dict, **kwargs
+    ) -> ModelOutput:
         """Get Model output object from
 
         (1) output of model forward

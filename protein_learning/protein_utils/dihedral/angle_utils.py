@@ -4,7 +4,7 @@ from typing import Tuple, Union, List
 
 cos_max, cos_min = (1 - 1e-9), -(1 - 1e-9)
 min_norm_clamp = 1e-9
-from protein_learning.common.helpers import disable_tf32
+from attnpacker.common.helpers import disable_tf32
 
 
 def signed_dihedral_4(

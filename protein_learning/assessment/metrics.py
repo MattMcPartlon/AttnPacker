@@ -9,7 +9,7 @@ import torch
 from einops import repeat, rearrange  # noqa
 from torch import Tensor
 
-from protein_learning.common.helpers import (
+from attnpacker.common.helpers import (
     get_eps,
     calc_tm_torch,
     default,
@@ -18,13 +18,13 @@ from protein_learning.common.helpers import (
     safe_norm
 
 )
-from protein_learning.common.protein_constants import (
+from attnpacker.common.protein_constants import (
     AA_INDEX_MAP,
     ALL_ATOM_POSNS,
 )
-from protein_learning.common.rigids import Rigids
-from protein_learning.features.masking.masking_utils import get_chain_masks, get_partition_mask
-from protein_learning.protein_utils.align.kabsch_align import kabsch_align
+from attnpacker.common.rigids import Rigids
+from attnpacker.features.masking.masking_utils import get_chain_masks, get_partition_mask
+from attnpacker.protein_utils.align.kabsch_align import kabsch_align
 
 
 def count_true(x: Tensor) -> int:

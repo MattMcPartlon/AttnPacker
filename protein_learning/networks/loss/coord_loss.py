@@ -6,18 +6,18 @@ import torch
 from einops import rearrange, repeat  # noqa
 from torch import nn, Tensor
 
-from protein_learning.common.data.data_types.model_output import ModelOutput
-from protein_learning.common.global_constants import get_logger
-from protein_learning.common.helpers import exists, safe_norm, default
-from protein_learning.common.rigids import Rigids
-from protein_learning.networks.common.utils import calc_tm_torch, exists
-from protein_learning.networks.loss.utils import get_loss_func, get_tm_scale
-from protein_learning.networks.loss.violation_loss import (
+from attnpacker.common.data.data_types.model_output import ModelOutput
+from attnpacker.common.global_constants import get_logger
+from attnpacker.common.helpers import exists, safe_norm, default
+from attnpacker.common.rigids import Rigids
+from attnpacker.networks.common.utils import calc_tm_torch, exists
+from attnpacker.networks.loss.utils import get_loss_func, get_tm_scale
+from attnpacker.networks.loss.violation_loss import (
     BackboneAngleDeviationLoss,
     BackboneBondLenDeviationLoss,
     InterResidueVDWRepulsiveLoss,
 )
-from protein_learning.protein_utils.align.kabsch_align import kabsch_align
+from attnpacker.protein_utils.align.kabsch_align import kabsch_align
 
 logger = get_logger(__name__)
 

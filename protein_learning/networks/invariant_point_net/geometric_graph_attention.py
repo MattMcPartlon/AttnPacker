@@ -6,15 +6,15 @@ from torch import nn, einsum, Tensor
 
 from einops.layers.torch import Rearrange  # noqa
 from einops import rearrange, repeat  # noqa
-from protein_learning.common.helpers import exists, default, get_min_val as max_neg_value, disable_tf32
-from protein_learning.networks.common.net_utils import Residual, SplitLinear, FeedForward, PreNorm
-from protein_learning.common.rigids import Rigids
+from attnpacker.common.helpers import exists, default, get_min_val as max_neg_value, disable_tf32
+from attnpacker.networks.common.net_utils import Residual, SplitLinear, FeedForward, PreNorm
+from attnpacker.common.rigids import Rigids
 from typing import Optional, Tuple
-from protein_learning.networks.common.attention_utils import (
+from attnpacker.networks.common.attention_utils import (
     SimilarityType,
 )
-from protein_learning.common.helpers import safe_norm
-from protein_learning.common.global_constants import get_logger
+from attnpacker.common.helpers import safe_norm
+from attnpacker.common.global_constants import get_logger
 
 logger = get_logger(__name__)
 

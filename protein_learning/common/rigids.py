@@ -4,7 +4,7 @@ from typing import Tuple, Any
 
 import torch
 from einops import rearrange  # noqa
-from protein_learning.common.transforms import (  # noqa
+from attnpacker.common.transforms import (  # noqa
     quaternion_multiply,  # noqa
     quaternion_to_matrix,  # noqa
     matrix_to_quaternion,  # noqa
@@ -13,7 +13,7 @@ from protein_learning.common.transforms import (  # noqa
 )
 from torch import Tensor
 
-from protein_learning.common.helpers import safe_normalize
+from attnpacker.common.helpers import safe_normalize
 
 rot_mul_vec = lambda x, y: torch.einsum("... i j, ... j -> ... i", x, y)
 

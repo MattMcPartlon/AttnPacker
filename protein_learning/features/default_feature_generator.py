@@ -9,17 +9,17 @@ import torch
 from einops import repeat, rearrange  # noqa
 from torch import Tensor
 
-from protein_learning.common.data.data_types.model_input import ExtraInput
-from protein_learning.common.data.data_types.protein import Protein
-from protein_learning.common.global_constants import get_logger
-from protein_learning.common.helpers import exists, default
-from protein_learning.features.feature_config import FeatureName
-from protein_learning.features.feature_config import InputFeatureConfig
-from protein_learning.features.feature_generator import FeatureGenerator, get_input_features
-from protein_learning.features.input_features import InputFeatures
-from protein_learning.features.masking.inter_chain import InterChainMaskGenerator
-from protein_learning.features.masking.intra_chain import IntraChainMaskGenerator
-from protein_learning.features.masking.masking_utils import (
+from attnpacker.common.data.data_types.model_input import ExtraInput
+from attnpacker.common.data.data_types.protein import Protein
+from attnpacker.common.global_constants import get_logger
+from attnpacker.common.helpers import exists, default
+from attnpacker.features.feature_config import FeatureName
+from attnpacker.features.feature_config import InputFeatureConfig
+from attnpacker.features.feature_generator import FeatureGenerator, get_input_features
+from attnpacker.features.input_features import InputFeatures
+from attnpacker.features.masking.inter_chain import InterChainMaskGenerator
+from attnpacker.features.masking.intra_chain import IntraChainMaskGenerator
+from attnpacker.features.masking.masking_utils import (
     chain_mask_to_full_mask,
     mask_inter_chain_pair_features,
     mask_intra_chain_features,

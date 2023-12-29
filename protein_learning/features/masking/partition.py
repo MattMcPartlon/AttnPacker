@@ -10,10 +10,10 @@ import torch
 from einops import repeat, rearrange  # noqa
 from torch import Tensor
 
-from protein_learning.common.data.data_types.protein import Protein
-from protein_learning.common.global_constants import get_logger
-from protein_learning.common.helpers import exists
-from protein_learning.features.masking.masking_utils import (
+from attnpacker.common.data.data_types.protein import Protein
+from attnpacker.common.global_constants import get_logger
+from attnpacker.common.helpers import exists
+from attnpacker.features.masking.masking_utils import (
     get_mask_len,
     sample_strategy,
     cast_list,

@@ -5,7 +5,7 @@ from functools import wraps, lru_cache
 
 from filelock import FileLock
 
-from protein_learning.networks.common.utils import exists
+from attnpacker.networks.common.utils import exists
 
 
 # caching functions

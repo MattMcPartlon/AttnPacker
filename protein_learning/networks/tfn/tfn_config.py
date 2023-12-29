@@ -1,14 +1,14 @@
 from typing import NamedTuple, Union, Tuple, Dict, Optional
-from protein_learning.networks.tfn.repr.fiber import Fiber
-from protein_learning.networks.common.utils import update_named_tuple
+from attnpacker.networks.tfn.repr.fiber import Fiber
+from attnpacker.networks.common.utils import update_named_tuple
 from torch import Tensor
-from protein_learning.networks.common.helpers.neighbor_utils import NeighborInfo
-from protein_learning.networks.common.helpers.torch_utils import (
+from attnpacker.networks.common.helpers.neighbor_utils import NeighborInfo
+from attnpacker.networks.common.helpers.torch_utils import (
     safe_cat,
     fourier_encode,
 )
 from einops import rearrange
-from protein_learning.networks.common.constants import DIST_SCALE
+from attnpacker.networks.common.constants import DIST_SCALE
 import torch
 
 

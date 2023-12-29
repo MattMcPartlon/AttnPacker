@@ -1,8 +1,8 @@
 """Tests for parsing feature config"""
-from protein_learning.models.utils.opt_parse import add_feature_options
-from protein_learning.models.model_abc.train import get_input_feature_config
+from attnpacker.models.utils.opt_parse import add_feature_options
+from attnpacker.models.model_abc.train import get_input_feature_config
 from argparse import ArgumentParser
-from protein_learning.models.utils.model_io import get_args_n_groups
+from attnpacker.models.utils.model_io import get_args_n_groups
 
 
 def test_feat_config_parse():

@@ -2,26 +2,26 @@ import torch
 
 torch.multiprocessing.set_sharing_strategy('file_system')
 from torch.utils.data import Dataset
-from protein_learning.models.model_abc.protein_model import ProteinModel
-from protein_learning.common.data.data_types.model_output import ModelOutput, ModelInput
+from attnpacker.models.model_abc.protein_model import ProteinModel
+from attnpacker.common.data.data_types.model_output import ModelOutput, ModelInput
 from typing import Optional, Dict, Tuple, NamedTuple, List
-from protein_learning.training.trainer import Trainer
-from protein_learning.training.train_utils import EvalTy
-from protein_learning.common.global_config import GlobalConfig
+from attnpacker.training.trainer import Trainer
+from attnpacker.training.train_utils import EvalTy
+from attnpacker.common.global_config import GlobalConfig
 import numpy as np
 import time
-from protein_learning.assessment.model_eval.stats_handler import LossHandler
-from protein_learning.common.helpers import exists, default
+from attnpacker.assessment.model_eval.stats_handler import LossHandler
+from attnpacker.common.helpers import exists, default
 from enum import Enum
-from protein_learning.common.data.data_types.protein import Protein
+from attnpacker.common.data.data_types.protein import Protein
 import os
-from protein_learning.features.masking.masking_utils import get_chain_masks
+from attnpacker.features.masking.masking_utils import get_chain_masks
 import traceback
-from protein_learning.common.data.datasets.utils import set_canonical_coords_n_masks
+from attnpacker.common.data.datasets.utils import set_canonical_coords_n_masks
 from torch.cuda.amp import autocast
 from copy import deepcopy
 import math
-from protein_learning.common.rigids import Rigids
+from attnpacker.common.rigids import Rigids
 
 class StatsKeys(Enum):
     NSR = "nsr"

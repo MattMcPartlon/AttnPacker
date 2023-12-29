@@ -7,14 +7,14 @@ import torch
 from einops import repeat, rearrange  # noqa
 from torch import nn, Tensor
 
-from protein_learning.common.data.data_types.model_loss import ModelLoss
-from protein_learning.common.data.data_types.model_output import ModelOutput
-from protein_learning.common.global_constants import get_logger
-from protein_learning.common.helpers import exists, default, get_max_val, get_min_val
-from protein_learning.features.masking.masking_utils import (
+from attnpacker.common.data.data_types.model_loss import ModelLoss
+from attnpacker.common.data.data_types.model_output import ModelOutput
+from attnpacker.common.global_constants import get_logger
+from attnpacker.common.helpers import exists, default, get_max_val, get_min_val
+from attnpacker.features.masking.masking_utils import (
     get_chain_masks
 )
-from protein_learning.networks.loss.loss_config import LossConfig, LossTy
+from attnpacker.networks.loss.loss_config import LossConfig, LossTy
 
 logger = get_logger(__name__)
 

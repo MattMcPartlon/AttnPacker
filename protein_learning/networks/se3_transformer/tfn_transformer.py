@@ -6,14 +6,14 @@ import torch.nn.functional as F  # noqa
 from einops import rearrange, repeat  # noqa
 from torch import nn
 
-from protein_learning.networks.common.helpers.torch_utils import fused_gelu as GELU  # noqa
-from protein_learning.networks.common.helpers.neighbor_utils import NeighborInfo
-from protein_learning.networks.common.utils import exists
-from protein_learning.networks.se3_transformer.se3_transformer_config import SE3TransformerConfig
-from protein_learning.networks.tfn.tfn import ConvSE3
-from protein_learning.networks.se3_transformer.se3_transformer import SE3Transformer
+from attnpacker.networks.common.helpers.torch_utils import fused_gelu as GELU  # noqa
+from attnpacker.networks.common.helpers.neighbor_utils import NeighborInfo
+from attnpacker.networks.common.utils import exists
+from attnpacker.networks.se3_transformer.se3_transformer_config import SE3TransformerConfig
+from attnpacker.networks.tfn.tfn import ConvSE3
+from attnpacker.networks.se3_transformer.se3_transformer import SE3Transformer
 
-from protein_learning.networks.common.equivariant.fiber_units import (
+from attnpacker.networks.common.equivariant.fiber_units import (
     FiberNorm,
     FiberResidual,
     FiberLinear,

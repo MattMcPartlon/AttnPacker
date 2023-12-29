@@ -6,7 +6,7 @@ from typing import Optional, List, Tuple, Dict, Any, Union
 
 import torch
 from einops import rearrange  # noqa
-from protein_learning.common.transforms import (  # noqa
+from attnpacker.common.transforms import (  # noqa
     quaternion_multiply,  # noqa
     quaternion_to_matrix,  # noqa
     matrix_to_quaternion,  # noqa
@@ -15,13 +15,13 @@ from protein_learning.common.transforms import (  # noqa
 )
 from torch import Tensor
 
-from protein_learning.common.helpers import exists, coords_to_rel_coords, safe_normalize
-from protein_learning.common.protein_constants import AA_INDEX_MAP
-from protein_learning.features.feature import Feature
-from protein_learning.features.feature_config import FeatureTy, FeatureName
-from protein_learning.features.input_features import PI
-from protein_learning.protein_utils.dihedral.orientation_utils import get_bb_dihedral, get_tr_rosetta_orientation_mats
-from protein_learning.protein_utils.sidechains.sidechain_rigid_utils import atom37_to_torsion_angles
+from attnpacker.common.helpers import exists, coords_to_rel_coords, safe_normalize
+from attnpacker.common.protein_constants import AA_INDEX_MAP
+from attnpacker.features.feature import Feature
+from attnpacker.features.feature_config import FeatureTy, FeatureName
+from attnpacker.features.input_features import PI
+from attnpacker.protein_utils.dihedral.orientation_utils import get_bb_dihedral, get_tr_rosetta_orientation_mats
+from attnpacker.protein_utils.sidechains.sidechain_rigid_utils import atom37_to_torsion_angles
 
 
 def string_encode(mapping: Dict[str, int], *x, device: Any = "cpu") -> Tensor:

@@ -6,7 +6,7 @@ import torch
 from einops import rearrange  # noqa
 from torch import Tensor
 
-from protein_learning.common.protein_constants import INDEX_TO_AA_ONE
+from attnpacker.common.protein_constants import INDEX_TO_AA_ONE
 
 get_eps = lambda x: torch.finfo(x.dtype).eps  # noqa
 get_max_val = lambda x: torch.finfo(x.dtype).max  # noqa

@@ -5,7 +5,7 @@ from typing import Dict, Tuple, Union
 import torch
 from torch import nn
 
-from protein_learning.networks.common.utils import default
+from attnpacker.networks.common.utils import default
 
 FiberEl = namedtuple('FiberEl', ['degrees', 'dim'])
 

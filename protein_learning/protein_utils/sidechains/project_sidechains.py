@@ -6,18 +6,18 @@ Finds sidechain rotamers minimizing RMSD to atom37 representation of coordinates
 """
 import torch
 from torch import Tensor, nn
-from protein_learning.networks.common.of_rigid_utils import Rigid
-from protein_learning.networks.fa_coord.coords_from_angles import FACoordModule
-import protein_learning.common.protein_constants as pc
+from attnpacker.networks.common.of_rigid_utils import Rigid
+from attnpacker.networks.fa_coord.coords_from_angles import FACoordModule
+import attnpacker.common.protein_constants as pc
 from einops import rearrange, repeat  # noqa
-from protein_learning.common.helpers import default, safe_normalize, safe_norm, exists
+from attnpacker.common.helpers import default, safe_normalize, safe_norm, exists
 import torch.nn.functional as F  # noqa
 from typing import Union, Optional, List, Tuple, Any, Dict
-from protein_learning.networks.loss.side_chain_loss import SideChainDihedralLoss
-from protein_learning.protein_utils.sidechains.sidechain_rigid_utils import atom37_to_torsion_angles
-from protein_learning.protein_utils.sidechains.sidechain_utils import align_symmetric_sidechains, swap_symmetric_atoms
-from protein_learning.common.rigids import Rigids as SimpleRigids
-from protein_learning.networks.common.helpers.neighbor_utils import get_neighbor_info, batched_index_select
+from attnpacker.networks.loss.side_chain_loss import SideChainDihedralLoss
+from attnpacker.protein_utils.sidechains.sidechain_rigid_utils import atom37_to_torsion_angles
+from attnpacker.protein_utils.sidechains.sidechain_utils import align_symmetric_sidechains, swap_symmetric_atoms
+from attnpacker.common.rigids import Rigids as SimpleRigids
+from attnpacker.networks.common.helpers.neighbor_utils import get_neighbor_info, batched_index_select
 
 try:
     from functools import cached_property  # noqa

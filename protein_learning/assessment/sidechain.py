@@ -1,20 +1,20 @@
-from protein_learning.protein_utils.sidechains.project_sidechains import (
+from attnpacker.protein_utils.sidechains.project_sidechains import (
     compute_sc_rmsd,
     compute_clashes
 )
-from protein_learning.common.data.data_types.protein import Protein
+from attnpacker.common.data.data_types.protein import Protein
 import torch
-import protein_learning.common.protein_constants as pc
-from protein_learning.common.helpers import safe_normalize, default, masked_mean
-from protein_learning.common.data.datasets.utils import set_canonical_coords_n_masks
+import attnpacker.common.protein_constants as pc
+from attnpacker.common.helpers import safe_normalize, default, masked_mean
+from attnpacker.common.data.datasets.utils import set_canonical_coords_n_masks
 from torchtyping import TensorType, patch_typeguard
 from typeguard import typechecked
-from protein_learning.protein_utils.sidechains.sidechain_rigid_utils import atom37_to_torsion_angles
-from protein_learning.protein_utils.sidechains.sidechain_utils import align_symmetric_sidechains, get_sc_dihedral
+from attnpacker.protein_utils.sidechains.sidechain_rigid_utils import atom37_to_torsion_angles
+from attnpacker.protein_utils.sidechains.sidechain_utils import align_symmetric_sidechains, get_sc_dihedral
 from typing import List
 import numpy as np
 import math
-from protein_learning.protein_utils.align.kabsch_align import kabsch_align
+from attnpacker.protein_utils.align.kabsch_align import kabsch_align
 PI = math.pi
 patch_typeguard()
 

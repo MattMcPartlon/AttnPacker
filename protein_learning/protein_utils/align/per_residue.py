@@ -3,8 +3,8 @@ from typing import Tuple, Optional
 from torch import Tensor
 import torch
 from einops import rearrange # noqa
-from protein_learning.protein_utils.align.kabsch_align import _calc_kabsch_rot_n_trans
-from protein_learning.common.helpers import default
+from attnpacker.protein_utils.align.kabsch_align import _calc_kabsch_rot_n_trans
+from attnpacker.common.helpers import default
 
 
 def get_per_res_alignment(

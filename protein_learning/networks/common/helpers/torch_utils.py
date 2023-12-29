@@ -7,7 +7,7 @@ from torch import Tensor
 from einops import rearrange # noqa
 from torch import nn
 
-from protein_learning.networks.common.utils import exists
+from attnpacker.networks.common.utils import exists
 
 get_max_neg_value = lambda x: torch.finfo(x.dtype).min  # noqa
 get_eps = lambda x: torch.finfo(x.dtype).eps  # noqa

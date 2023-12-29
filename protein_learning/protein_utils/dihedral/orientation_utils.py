@@ -1,7 +1,7 @@
 import torch
 from torch import Tensor
 from typing import Tuple, List
-from protein_learning.protein_utils.dihedral.angle_utils import (
+from attnpacker.protein_utils.dihedral.angle_utils import (
     signed_dihedral_all_12,
     signed_dihedral_4,
     signed_dihedral_all_123,

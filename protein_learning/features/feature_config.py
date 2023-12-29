@@ -5,8 +5,8 @@ from __future__ import annotations
 from enum import Enum
 from typing import NamedTuple, List, Tuple, Union, Optional
 import numpy as np 
-from protein_learning.common.protein_constants import AA_ALPHABET
-from protein_learning.features.constants import SMALL_SEP_BINS, DEFAULT_PW_DIST_RADII
+from attnpacker.common.protein_constants import AA_ALPHABET
+from attnpacker.features.constants import SMALL_SEP_BINS, DEFAULT_PW_DIST_RADII
 
 
 class FeatureDescriptor(NamedTuple):

@@ -8,7 +8,7 @@ from einops import rearrange  # noqa
 from torch import einsum
 from torch import nn
 
-from protein_learning.common.helpers import default
+from attnpacker.common.helpers import default
 
 MAX_FLOAT = 1e6
 to_rel_coord = lambda x: rearrange(x, "... n c -> ... n () c") - rearrange(x, "... n c-> ... () n c")

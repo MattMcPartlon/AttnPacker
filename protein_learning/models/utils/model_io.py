@@ -6,7 +6,7 @@ from typing import Dict, Union, Optional, Tuple, Any
 
 import numpy as np
 
-from protein_learning.common.global_config import (
+from attnpacker.common.global_config import (
     GlobalConfig,
     load_config,
     load_npy,
@@ -14,8 +14,8 @@ from protein_learning.common.global_config import (
     print_config,
     make_config,
 )
-from protein_learning.common.helpers import exists, default
-from protein_learning.common.io.utils import parse_arg_file
+from attnpacker.common.helpers import exists, default
+from attnpacker.common.io.utils import parse_arg_file
 
 
 def get_arg_list_from_std_in():

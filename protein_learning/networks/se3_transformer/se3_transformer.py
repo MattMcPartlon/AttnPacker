@@ -9,23 +9,32 @@ from einops import rearrange, repeat  # noqa
 from torch import Tensor
 from torch import nn
 
-from protein_learning.common.global_constants import get_logger
-from protein_learning.common.helpers import time_fn
-from protein_learning.networks.common.equivariant.fiber_units import (
+from attnpacker.common.global_constants import get_logger
+from attnpacker.common.helpers import time_fn
+from attnpacker.networks.common.equivariant.fiber_units import (
     FiberNorm,
     FiberFeedForwardResidualBlock,
     FiberFeedForward,
     FiberResidual,
     FiberDropout,
 )
-from protein_learning.networks.common.helpers.neighbor_utils import NeighborInfo, get_neighbor_info
-from protein_learning.common.helpers import maybe_add_batch
-from protein_learning.networks.common.helpers.torch_utils import batched_index_select
-from protein_learning.networks.common.helpers.torch_utils import fused_gelu as GELU  # noqa
-from protein_learning.networks.tfn.repr.basis import get_basis
-from protein_learning.networks.common.utils import exists
-from protein_learning.networks.se3_transformer.attention.tfn_attention import TFNAttention
-from protein_learning.networks.se3_transformer.se3_transformer_config import SE3TransformerConfig
+from attnpacker.networks.common.helpers.neighbor_utils import (
+    NeighborInfo,
+    get_neighbor_info,
+)
+from attnpacker.common.helpers import maybe_add_batch
+from attnpacker.networks.common.helpers.torch_utils import batched_index_select
+from attnpacker.networks.common.helpers.torch_utils import (
+    fused_gelu as GELU,
+)  # noqa
+from attnpacker.networks.tfn.repr.basis import get_basis
+from attnpacker.networks.common.utils import exists
+from attnpacker.networks.se3_transformer.attention.tfn_attention import (
+    TFNAttention,
+)
+from attnpacker.networks.se3_transformer.se3_transformer_config import (
+    SE3TransformerConfig,
+)
 
 logger = get_logger(__name__)
 
@@ -73,7 +82,12 @@ class AttentionBlock(nn.Module):
         """
         res = features
         outputs = self.prenorm(features)
-        outputs = self.attn(features=outputs, edge_info=edge_info, basis=basis, global_feats=global_feats)
+        outputs = self.attn(
+            features=outputs,
+            edge_info=edge_info,
+            basis=basis,
+            global_feats=global_feats,
+        )
         return self.residual(self.dropout(outputs), res)
 
 
@@ -125,7 +139,10 @@ class AttentionLayer(nn.Module):
 
 def get_input(res_feats, pair_feats, coords, top_k=16, include_sc: bool = False):
     """Get Transformer input"""
-    N, CA, C, O = map(lambda x: maybe_add_batch(x.unsqueeze(-2), 3), torch.unbind(coords[..., :4, :], -2))
+    N, CA, C, O = map(
+        lambda x: maybe_add_batch(x.unsqueeze(-2), 3),
+        torch.unbind(coords[..., :4, :], -2),
+    )
     if not include_sc:
         crd_feats = torch.cat((N, C, O), dim=-2)
     else:
@@ -153,19 +170,26 @@ class SE3Transformer(nn.Module):
         self.accept_global_feats = exists(config.global_feats_dim)
 
         # Attention layers
-        self.attn_layers = nn.ModuleList([AttentionLayer(config=config) for _ in range(config.depth)])
+        self.attn_layers = nn.ModuleList(
+            [AttentionLayer(config=config) for _ in range(config.depth)]
+        )
 
         # freeze layers
         if freeze:
             self.freeze()
 
         self.edge_norm = (
-            nn.LayerNorm(config.edge_dim) if (exists(config.edge_dim) and pre_norm_edges) else nn.Identity()
+            nn.LayerNorm(config.edge_dim)
+            if (exists(config.edge_dim) and pre_norm_edges)
+            else nn.Identity()
         )
 
     def freeze(self):
         n_layers = len(self.attn_layers)
-        print(f"[INFO] Freezing SE(3)-Transformer layers " f"1-{n_layers - 1} (of {n_layers})")
+        print(
+            f"[INFO] Freezing SE(3)-Transformer layers "
+            f"1-{n_layers - 1} (of {n_layers})"
+        )
         for module in self.attn_layers[:-1]:
             for param in module.parameters():
                 param.requires_grad_(False)
@@ -185,7 +209,9 @@ class SE3Transformer(nn.Module):
         """
         config = self.config
 
-        feats, edges, neighbor_info = get_input(node_feats, pair_feats, coords, include_sc=self.include_initial_sc)
+        feats, edges, neighbor_info = get_input(
+            node_feats, pair_feats, coords, include_sc=self.include_initial_sc
+        )
 
         assert not (
             self.accept_global_feats ^ exists(global_feats)
@@ -193,15 +219,24 @@ class SE3Transformer(nn.Module):
 
         # convert features to dictionary representation
         feats = {"0": feats} if torch.is_tensor(feats) else feats
-        feats["0"] = feats["0"] if len(feats["0"].shape) == 4 else feats["0"].unsqueeze(-1)
-        global_feats = {"0": global_feats[..., None]} if torch.is_tensor(global_feats) else global_feats
+        feats["0"] = (
+            feats["0"] if len(feats["0"].shape) == 4 else feats["0"].unsqueeze(-1)
+        )
+        global_feats = (
+            {"0": global_feats[..., None]}
+            if torch.is_tensor(global_feats)
+            else global_feats
+        )
 
         # check that input degrees and dimensions are as expected
         for deg, dim in config.fiber_in:
             feat_dim, feat_deg = feats[str(deg)].shape[-2:]
-            assert dim == feat_dim, f" expected dim {dim} for input degree {deg}, got {feat_dim}"
+            assert (
+                dim == feat_dim
+            ), f" expected dim {dim} for input degree {deg}, got {feat_dim}"
             assert deg * 2 + 1 == feat_deg, (
-                f"wrong degree for feature {deg}, expected " f": {deg * 2 + 1}, got : {feat_deg}"
+                f"wrong degree for feature {deg}, expected "
+                f": {deg * 2 + 1}, got : {feat_deg}"
             )
 
         if exists(edges):
@@ -232,11 +267,15 @@ class SE3Transformer(nn.Module):
                 basis=basis,
                 global_feats=global_feats,
             )
-        logger.info(f"TFN-Transformer time (forward) : {np.round(time.time() - attn_start, 3)}")
+        logger.info(
+            f"TFN-Transformer time (forward) : {np.round(time.time() - attn_start, 3)}"
+        )
         return self.project_out(features=x, edge_info=edge_info, basis=basis)
 
     @staticmethod
-    def compute_basis(neighbor_info: NeighborInfo, max_degree: int, differentiable: bool, dirname=None):
+    def compute_basis(
+        neighbor_info: NeighborInfo, max_degree: int, differentiable: bool, dirname=None
+    ):
         basis = get_basis(
             neighbor_info.rel_pos.detach(),
             max_degree=max_degree,
@@ -254,7 +293,10 @@ class SE3Transformer(nn.Module):
 
     @abstractmethod
     def project_in(
-        self, features: Dict[str, Tensor], edge_info: Tuple[Optional[Tensor], NeighborInfo], basis: Dict[str, Tensor]
+        self,
+        features: Dict[str, Tensor],
+        edge_info: Tuple[Optional[Tensor], NeighborInfo],
+        basis: Dict[str, Tensor],
     ) -> Dict[str, Tensor]:
         """Equivariant input projection
 
@@ -267,7 +309,10 @@ class SE3Transformer(nn.Module):
 
     @abstractmethod
     def project_out(
-        self, features: Dict[str, Tensor], edge_info: Tuple[Optional[Tensor], NeighborInfo], basis: Dict[str, Tensor]
+        self,
+        features: Dict[str, Tensor],
+        edge_info: Tuple[Optional[Tensor], NeighborInfo],
+        basis: Dict[str, Tensor],
     ) -> Dict[str, Tensor]:
         """Equivariant output projection
 

@@ -7,19 +7,19 @@ from einops import rearrange, repeat  # noqa
 from torch import Tensor, nn
 from torch.nn.functional import one_hot as to_one_hot
 
-from protein_learning.common.global_constants import get_logger
-from protein_learning.common.helpers import exists, default
-from protein_learning.common.protein_constants import AA_ALPHABET
-from protein_learning.features.feature import Feature
-from protein_learning.features.feature_config import (
+from attnpacker.common.global_constants import get_logger
+from attnpacker.common.helpers import exists, default
+from attnpacker.common.protein_constants import AA_ALPHABET
+from attnpacker.features.feature import Feature
+from attnpacker.features.feature_config import (
     InputFeatureConfig,
     FeatureTy,
     FeatureName,
     FeatureEmbeddingTy,
     FEATURE_NAMES,
 )
-from protein_learning.features.feature_utils import fourier_encode
-from protein_learning.features.input_features import InputFeatures
+from attnpacker.features.feature_utils import fourier_encode
+from attnpacker.features.input_features import InputFeatures
 
 logger = get_logger(__name__)
 

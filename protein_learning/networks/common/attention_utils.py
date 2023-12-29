@@ -1,9 +1,9 @@
 import torch
 from torch import Tensor, einsum
-from protein_learning.networks.common.helpers.torch_utils import to_rel_pos, ndim, get_max_neg_value, safe_norm
+from attnpacker.networks.common.helpers.torch_utils import to_rel_pos, ndim, get_max_neg_value, safe_norm
 from einops import rearrange
 from math import sqrt
-from protein_learning.networks.common.utils import exists
+from attnpacker.networks.common.utils import exists
 from enum import Enum
 from typing import Dict, Optional
 

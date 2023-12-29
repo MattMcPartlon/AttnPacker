@@ -6,8 +6,8 @@ import torch.utils.checkpoint as checkpoint
 from einops import rearrange  # noqa
 from torch import nn, einsum, Tensor
 
-from protein_learning.networks.common.net_utils import Residual, exists, default, LearnedOuter, Transition, get_min_val
-from protein_learning.networks.common.jit_scripts import Fuser
+from attnpacker.networks.common.net_utils import Residual, exists, default, LearnedOuter, Transition, get_min_val
+from attnpacker.networks.common.jit_scripts import Fuser
 
 List = nn.ModuleList  # noqa
 tri_outgoing = lambda a, b: torch.einsum("b i k d, b j k d -> b i j d ", a, b)

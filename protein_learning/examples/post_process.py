@@ -1,11 +1,11 @@
 import os
 import sys
-from protein_learning.protein_utils.sidechains.project_sidechains import (
+from attnpacker.protein_utils.sidechains.project_sidechains import (
     project_onto_rotamers,
 )
-from protein_learning.common.data.data_types.protein import Protein
-import protein_learning.common.protein_constants as pc
-from protein_learning.common.data.datasets.utils import set_canonical_coords_n_masks
+from attnpacker.common.data.data_types.protein import Protein
+import attnpacker.common.protein_constants as pc
+from attnpacker.common.data.datasets.utils import set_canonical_coords_n_masks
 from argparse import ArgumentParser, ArgumentDefaultsHelpFormatter
 
 import time

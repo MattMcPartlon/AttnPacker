@@ -7,7 +7,7 @@ from typing import Tuple
 import torch
 from torch import Tensor
 
-from protein_learning.common.protein_constants import BB_ATOMS, SC_ATOMS
+from attnpacker.common.protein_constants import BB_ATOMS, SC_ATOMS
 
 try:
     from functools import cached_property  # noqa

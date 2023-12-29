@@ -1,7 +1,7 @@
 """Evoformer Config"""
 from typing import Optional
-from protein_learning.networks.common.utils import default
-from protein_learning.networks.config.net_config import NetConfig
+from attnpacker.networks.common.utils import default
+from attnpacker.networks.config.net_config import NetConfig
 from typing import Tuple
 
 

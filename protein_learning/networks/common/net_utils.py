@@ -8,7 +8,7 @@ import torch
 import torch.utils.checkpoint as checkpoint
 from einops import rearrange  # noqa
 from torch import nn, Tensor, tensor, tensor_split  # noqa
-from protein_learning.networks.common.jit_scripts import Fuser
+from attnpacker.networks.common.jit_scripts import Fuser
 
 """Helper Functions"""
 rot_mul_vec = lambda x, y: torch.einsum("... i j, ... j -> ... i", x, y)

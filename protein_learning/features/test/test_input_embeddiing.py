@@ -1,8 +1,8 @@
 """Tests for input embedding"""
-from protein_learning.features.feature_config import InputFeatureConfig, AA_ALPHABET
-from protein_learning.features.feature_generator import DefaultFeatureGenerator
-from protein_learning.features.input_embedding import InputEmbedding
-from protein_learning.common.data.data_types.protein import Protein
+from attnpacker.features.feature_config import InputFeatureConfig, AA_ALPHABET
+from attnpacker.features.feature_generator import DefaultFeatureGenerator
+from attnpacker.features.input_embedding import InputEmbedding
+from attnpacker.common.data.data_types.protein import Protein
 import torch
 
 config_kwargs = dict(

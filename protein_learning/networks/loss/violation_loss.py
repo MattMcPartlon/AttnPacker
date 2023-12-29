@@ -12,7 +12,7 @@ import torch.nn.functional as F  # noqa
 from einops import repeat, rearrange  # noqa
 from torch import nn, Tensor
 
-from protein_learning.common.protein_constants import (
+from attnpacker.common.protein_constants import (
     ALL_ATOM_POSNS,
     ALL_ATOM_VDW_RADII,
     BOND_ANGLES,
@@ -22,7 +22,7 @@ from protein_learning.common.protein_constants import (
     BOND_LEN_OFFSET,
     BOND_ANGLE_OFFSET,
 )
-from protein_learning.networks.loss.utils import (
+from attnpacker.networks.loss.utils import (
     outer_sum,
     outer_prod,
     to_rel_coord,

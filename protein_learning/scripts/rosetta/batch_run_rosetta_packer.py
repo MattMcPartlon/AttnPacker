@@ -34,7 +34,7 @@ init('-out:levels core.conformation.Conformation:error '
      )
 from pyrosetta import init, Pose, get_fa_scorefxn, standard_packer_task, pose_from_file  # noqa
 from pyrosetta.rosetta import protocols
-from protein_learning.scripts.utils import load_list
+from attnpacker.scripts.utils import load_list
 import numpy as np
 
 

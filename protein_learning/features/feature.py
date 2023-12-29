@@ -7,8 +7,8 @@ from typing import Any, Optional, List, Union
 import torch
 from torch import Tensor
 
-from protein_learning.common.helpers import safe_to_device, exists, default
-from protein_learning.features.feature_config import FeatureTy, FeatureEmbeddingTy
+from attnpacker.common.helpers import safe_to_device, exists, default
+from attnpacker.features.feature_config import FeatureTy, FeatureEmbeddingTy
 
 
 class Feature:

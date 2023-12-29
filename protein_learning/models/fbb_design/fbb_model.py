@@ -3,17 +3,21 @@ from typing import Tuple, Dict, Any, Optional, List
 
 import numpy as np
 from torch import nn, Tensor
-from protein_learning.common.data.data_types.model_input import ModelInput
-from protein_learning.common.data.data_types.model_loss import ModelLoss
-from protein_learning.common.data.data_types.model_output import ModelOutput
-from protein_learning.common.global_constants import get_logger
-from protein_learning.common.helpers import exists
-from protein_learning.features.input_embedding import InputEmbedding
-from protein_learning.models.model_abc.structure_model import StructureModel
-from protein_learning.networks.geometric_gt.geom_gt_config import GeomGTConfig
-from protein_learning.networks.geometric_gt.geometric_graph_transformer import GraphTransformer
-from protein_learning.networks.se3_transformer.se3_transformer_config import SE3TransformerConfig
-from protein_learning.networks.se3_transformer.tfn_transformer import TFNTransformer
+from attnpacker.common.data.data_types.model_input import ModelInput
+from attnpacker.common.data.data_types.model_loss import ModelLoss
+from attnpacker.common.data.data_types.model_output import ModelOutput
+from attnpacker.common.global_constants import get_logger
+from attnpacker.common.helpers import exists
+from attnpacker.features.input_embedding import InputEmbedding
+from attnpacker.models.model_abc.structure_model import StructureModel
+from attnpacker.networks.geometric_gt.geom_gt_config import GeomGTConfig
+from attnpacker.networks.geometric_gt.geometric_graph_transformer import (
+    GraphTransformer,
+)
+from attnpacker.networks.se3_transformer.se3_transformer_config import (
+    SE3TransformerConfig,
+)
+from attnpacker.networks.se3_transformer.tfn_transformer import TFNTransformer
 
 logger = get_logger(__name__)
 
@@ -70,12 +74,18 @@ class FBBDesigner(StructureModel):  # noqa
         self.pre_structure_node = None
         self.basis_dir = basis_dir
 
+        self.pair_dim = c.pair_dim
+        self.decoder_node_dim = se3_config.scalar_dims()[0]
+        self.encoder_node_dim = c.node_dim
+
     def get_input_res_n_pair_feats(self, sample: ModelInput):
         """Input residue and pair features"""
         node, pair = self.input_embedding(sample.input_features)
         return self.residue_project_in(node), self.pair_project_in(pair)
 
-    def get_feats_for_recycle(self, model_out: Any, model_in: Dict) -> Tuple[Tensor, Tensor, Tensor]:
+    def get_feats_for_recycle(
+        self, model_out: Any, model_in: Dict
+    ) -> Tuple[Tensor, Tensor, Tensor]:
         raise Exception("Recycling not performed!!")
 
     def get_forward_kwargs(
@@ -90,7 +100,9 @@ class FBBDesigner(StructureModel):  # noqa
         res_mask = model_input.decoy.valid_residue_mask
         mask_frac = len(res_mask[res_mask]) / len(res_mask)
         if len(res_mask[res_mask] / len(res_mask)) < 1:
-            print(f"[WARNING] : {np.round(100 - 100 * mask_frac, 2)}% of backbone is missing!")
+            print(
+                f"[WARNING] : {np.round(100 - 100 * mask_frac, 2)}% of backbone is missing!"
+            )
 
         if exists(self.pre_structure):
             main_device, sec_device = residue_feats.device, residue_feats.device
@@ -100,7 +112,9 @@ class FBBDesigner(StructureModel):  # noqa
                 res_mask=res_mask.unsqueeze(0).to(sec_device),
             )
             residue_feats, pair_feats, *_ = self.pre_structure(**net_kwargs)
-            residue_feats, pair_feats = map(lambda x: x.to(main_device), (residue_feats, pair_feats))
+            residue_feats, pair_feats = map(
+                lambda x: x.to(main_device), (residue_feats, pair_feats)
+            )
 
         self.pre_structure_pair = pair_feats
         self.pre_structure_node = residue_feats
@@ -112,10 +126,14 @@ class FBBDesigner(StructureModel):  # noqa
             basis_dir=self.basis_dir,
         )
 
-    def get_model_output(self, model_input: ModelInput, fwd_output: Any, fwd_input: Dict, **kwargs) -> ModelOutput:
+    def get_model_output(
+        self, model_input: ModelInput, fwd_output: Any, fwd_input: Dict, **kwargs
+    ) -> ModelOutput:
         """Get model output"""
         node, pred_coords = fwd_output
-        pred_coords[..., :4, :] = model_input.native.atom_coords[..., :4, :].unsqueeze(0)
+        pred_coords[..., :4, :] = model_input.native.atom_coords[..., :4, :].unsqueeze(
+            0
+        )
 
         return ModelOutput(
             predicted_coords=pred_coords,
@@ -129,6 +147,7 @@ class FBBDesigner(StructureModel):  # noqa
                 chain_indices=model_input.decoy.chain_indices,
                 angles=None,
                 unnormalized_angles=None,
+                encoder_residue=self.pre_structure_node,
             ),
         )
 

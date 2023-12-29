@@ -6,17 +6,17 @@ from typing import Optional, Dict
 
 import torch
 from torch import Tensor
-from protein_learning.common.transforms import matrix_to_quaternion
-from protein_learning.common.data.data_types.model_input import ExtraInput
-from protein_learning.common.data.data_types.protein import Protein
-from protein_learning.common.helpers import rotation_from_3_points, exists
-from protein_learning.features.feature import Feature
-from protein_learning.features.feature_config import InputFeatureConfig, FeatureTy, FeatureName
-from protein_learning.features.feature_utils import res_ty_encoding, rel_pos_encoding, bb_dihedral_encoding, \
+from attnpacker.common.transforms import matrix_to_quaternion
+from attnpacker.common.data.data_types.model_input import ExtraInput
+from attnpacker.common.data.data_types.protein import Protein
+from attnpacker.common.helpers import rotation_from_3_points, exists
+from attnpacker.features.feature import Feature
+from attnpacker.features.feature_config import InputFeatureConfig, FeatureTy, FeatureName
+from attnpacker.features.feature_utils import res_ty_encoding, rel_pos_encoding, bb_dihedral_encoding, \
     degree_centrality_encoding, rel_sep_encoding, tr_rosetta_ori_encoding, rel_dist_encoding, local_rel_coords, \
     rel_ori_encoding, rel_chain_encoding, extra_encoding, sc_dihedral_encoding
-from protein_learning.features.input_features import InputFeatures
-from protein_learning.protein_utils.dihedral.orientation_utils import get_bb_dihedral, get_tr_rosetta_orientation_mats
+from attnpacker.features.input_features import InputFeatures
+from attnpacker.protein_utils.dihedral.orientation_utils import get_bb_dihedral, get_tr_rosetta_orientation_mats
 
 
 class FeatureGenerator:

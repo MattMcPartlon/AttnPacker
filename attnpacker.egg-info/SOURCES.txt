@@ -1,0 +1,7 @@
+README.md
+setup.py
+attnpacker.egg-info/PKG-INFO
+attnpacker.egg-info/SOURCES.txt
+attnpacker.egg-info/dependency_links.txt
+attnpacker.egg-info/not-zip-safe
+attnpacker.egg-info/top_level.txt
