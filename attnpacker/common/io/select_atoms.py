@@ -1,5 +1,9 @@
-from Bio.PDB.Polypeptide import three_to_one # noqa
 from Bio.PDB.PDBIO import Select # noqa
+from attnpacker.common.protein_constants import (
+    THREE_TO_ONE
+)
+def three_to_one(x):
+    return THREE_TO_ONE[x] if x in THREE_TO_ONE else "X"
 
 
 ## select CG atoms for an amino acid

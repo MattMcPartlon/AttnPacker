@@ -9,7 +9,6 @@ import numpy as np
 import torch
 from Bio import pairwise2  # noqa
 from Bio.PDB import PDBParser, MMCIFParser  # noqa
-from Bio.PDB.Polypeptide import three_to_one, is_aa  # noqa
 from Bio.PDB.Residue import Residue  # noqa
 from Bio.PDB.Structure import Structure  # noqa
 from Bio.Align import substitution_matrices
@@ -20,6 +19,7 @@ from attnpacker.common.io.select_atoms import SelectCG, SelectCB
 from attnpacker.common.protein_constants import (
     VALID_AA_3_LETTER,
     VALID_AA_1_LETTER,
+    THREE_TO_ONE
 )
 
 VALID_AA_1_LETTER_SET = set(VALID_AA_1_LETTER)
@@ -28,6 +28,12 @@ VALID_AA_3_LETTER_SET_EXTENDED = set(
     list(VALID_AA_3_LETTER) + ["C3Y", "ASX", "GLX", "UNK"]
 )
 BLOSUM80 = substitution_matrices.load("BLOSUM80")
+
+def three_to_one(x):
+    return THREE_TO_ONE[x] if x in THREE_TO_ONE else "X"
+
+def is_aa(x):
+    return x in VALID_AA_1_LETTER_SET or x in VALID_AA_3_LETTER_SET
 
 
 # getting errors for non-standard AAs
